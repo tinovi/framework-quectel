@@ -1,7 +1,7 @@
 {
     "name": "framework-quectel",
     "description": "Quectel Frameworks for PlatformIO",
-    "url": "https://www.quectel.com/",
+    "url": "https://github.com/Wiz-IO/framework-quectel",
     "version": "1.0.0",
     "autor": "Georgi Angelov"
 }
