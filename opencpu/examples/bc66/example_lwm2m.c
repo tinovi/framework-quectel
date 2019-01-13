@@ -47,7 +47,7 @@
 #include "ql_uart.h"
 #include "ql_timer.h"
 #include "ril_network.h"
-#include "ril_LwM2M.h"
+#include "ril_lwm2m.h"
 #include "ril.h"
 #include "ril_util.h"
 #include "ril_system.h"
