@@ -39,7 +39,7 @@
 #include "ql_error.h"
 #include "ql_system.h"
 #include "ql_common.h"
-#include "ril_LwM2M.h"
+#include "ril_lwm2m.h"
 #include "ql_uart.h"
 
 #ifdef __OCPU_RIL_SUPPORT__
@@ -196,7 +196,8 @@ static s32 ATResponse_Send_Handler(char* line, u32 len, void* userData)
 	
 	return RIL_ATRSP_CONTINUE; //continue wait
 }
-
+
+
 
 static s32 ATResponse_Recv_Handler(char* line, u32 len, void* userData)
 {  
@@ -302,7 +303,8 @@ static s32 ATResponse_Close_Handler(char* line, u32 len, void* userData)
 	
 	return RIL_ATRSP_CONTINUE; //continue wait
 }
-
+
+
 static s32 ATResponse_Delete_Handler(char* line, u32 len, void* userData)
 {
 	RIL_LwM2M_DEBUG(DBG_Buffer,"[ATResponse_Handler] %s\r\n", (u8*)line);
