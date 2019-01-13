@@ -39,7 +39,7 @@
 #include "ql_error.h"
 #include "ql_system.h"
 #include "ql_common.h"
-#include "ril_LwM2M.h"
+#include "ril_lwm2m.h"
 #include "ril_system.h"
 #include "ql_uart.h"
 
