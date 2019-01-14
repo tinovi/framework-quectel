@@ -36,7 +36,7 @@
 #ifndef __RIL_SMS_H__
 #define __RIL_SMS_H__
 
-#include "Lib_ril_sms.h"
+#include "lib_ril_sms.h"
 
 /***********************************************************************
  * MACRO CONSTANT DEFINITIONS
