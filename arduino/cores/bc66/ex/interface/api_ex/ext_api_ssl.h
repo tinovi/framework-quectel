@@ -561,4 +561,7 @@ typedef struct {
 } mbedtls_entropy_context __attribute__((aligned(8)));
 
 
+int mbedtls_base64_encode(char *dst, size_t dlen, size_t *olen, const char *src, size_t slen);
+int mbedtls_base64_decode(char *dst, size_t dlen, size_t *olen, const char *src, size_t slen);
+
 #endif /* EXT_API_SSL_H_ */
