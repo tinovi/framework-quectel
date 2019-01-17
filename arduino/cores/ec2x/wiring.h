@@ -85,8 +85,8 @@ typedef uint16_t word; // wizio unsigned int
 typedef uint8_t boolean;
 typedef uint8_t byte;
 
-void init(void) __attribute__((weak));
-void deinit(void) __attribute__((weak));
+void init(void);
+void deinit(void);
 
 void unexport_pin(uint8_t pin);
 
