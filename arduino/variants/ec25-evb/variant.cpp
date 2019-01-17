@@ -47,6 +47,9 @@ PinDescription g_APinDescription[] = {
 }
 #endif
 
+void init(void){}
+void deinit(){}
+
 const unsigned int MAX_PIN = ARRAY_SIZE(g_APinDescription);
 
 HardwareSerial  Serial(PORT_TTY_NATIVE(0));
