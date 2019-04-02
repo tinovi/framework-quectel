@@ -41,7 +41,6 @@ typedef enum {
     UART_PORT0 = 0,
     UART_PORT1,
     UART_PORT2,
-    UART_PORT3,
     UART_PORT_END
 }Enum_SerialPort;
 

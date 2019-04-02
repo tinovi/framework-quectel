@@ -72,6 +72,6 @@ typedef enum{
 * Return:        
 *               Number of characters printed
 *****************************************************************/
-extern s32  (*Ql_Debug_Trace)(char* fmt, ...);
+extern s32  (*Ql_Debug_Trace)(const char* fmt, ...); // WizIO
 
 #endif  // #end-of __QL_TRACE_H__

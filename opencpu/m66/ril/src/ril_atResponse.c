@@ -32,7 +32,7 @@
  * 
  ****************************************************************************/
 #include "custom_feature_def.h"
-#include "ril.h"
+#include "ril.h "
 #include "ril_util.h"
 #include "ql_stdlib.h"
 #include "ql_trace.h"
@@ -72,12 +72,12 @@ s32 Ql_RIL_AT_SetErrCode(s32 errCode) {m_iErrCode = errCode;}
 ******************************************************************************/
 s32 Default_atRsp_callback(char* line, u32 len, void* userdata)
 {
-    if (Ql_RIL_FindLine(line, len, "OK"))// find <CR><LF>OK<CR><LF>,OK<CR><LF>, <CR>OK<CR>Â£Â¬<LF>OK<LF>
+    if (Ql_RIL_FindLine(line, len, "OK"))// find <CR><LF>OK<CR><LF>,OK<CR><LF>, <CR>OK<CR>£¬<LF>OK<LF>
     {
         m_iErrCode = RIL_ATRSP_SUCCESS;
         return  RIL_ATRSP_SUCCESS;
     }
-    else if (Ql_RIL_FindLine(line, len, "ERROR")) // find <CR><LF>ERROR<CR><LF>, <CR>ERROR<CR>Â£Â¬<LF>ERROR<LF>
+    else if (Ql_RIL_FindLine(line, len, "ERROR")) // find <CR><LF>ERROR<CR><LF>, <CR>ERROR<CR>£¬<LF>ERROR<LF>
     {
         m_iErrCode = RIL_ATRSP_FAILED;
         return  RIL_ATRSP_FAILED;

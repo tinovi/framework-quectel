@@ -51,7 +51,9 @@
 /****************************************************************************
  * Type Definitions
  ***************************************************************************/
-typedef unsigned char       bool;
+//typedef unsigned char       bool; 
+#include <stdbool.h>
+
 typedef unsigned char       u8;
 typedef signed   char       s8;
 typedef unsigned short      u16;

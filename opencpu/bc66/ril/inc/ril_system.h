@@ -33,7 +33,13 @@
 #ifndef __RIL_SYSTEM_H__
 #define __RIL_SYSTEM_H__
 
+#define PSM_EVENT   (1)
 
+typedef enum {
+    ENTER_PSM = 0,
+    EXIT_PSM  = 1,
+    END_PSM
+}Enum_PSM_State;
 
 /*****************************************************************
 * Function:     RIL_GetIMEI 
@@ -58,6 +64,48 @@ s32 RIL_GetIMEI(char* imei);
 
 
 /*****************************************************************
+* Function:     RIL_QNbiotEvent_Enable 
+* 
+* Description:
+*                Enable NB-IoT Related Event Report
+*
+* Parameters:       
+*               event:
+*                   [Int]Indicate the report event,now only supports PSM state(1).
+* Return:        
+*                RIL_AT_SUCCESS,send AT successfully.
+*                RIL_AT_FAILED, send AT failed.
+*                RIL_AT_TIMEOUT,send AT timeout.
+*                RIL_AT_BUSY,   sending AT.
+*                RIL_AT_INVALID_PARAM, invalid input parameter.
+*                RIL_AT_UNINITIALIZED, RIL is not ready, need to wait for MSG_ID_RIL_READY
+*                                      and then call Ql_RIL_Initialize to initialize RIL.
+*****************************************************************/
+s32 RIL_QNbiotEvent_Enable(u32 event);
+
+
+/*****************************************************************
+* Function:     RIL_QNbiotEvent_Enable 
+* 
+* Description:
+*                Disable NB-IoT Related Event Report
+*
+* Parameters:       
+*               event:
+*                   [Int]Indicate the report event,now only supports PSM state(1).
+* Return:        
+*                RIL_AT_SUCCESS,send AT successfully.
+*                RIL_AT_FAILED, send AT failed.
+*                RIL_AT_TIMEOUT,send AT timeout.
+*                RIL_AT_BUSY,   sending AT.
+*                RIL_AT_INVALID_PARAM, invalid input parameter.
+*                RIL_AT_UNINITIALIZED, RIL is not ready, need to wait for MSG_ID_RIL_READY
+*                                      and then call Ql_RIL_Initialize to initialize RIL.
+*****************************************************************/
+s32 RIL_QNbiotEvent_Disable(u32 event);
+
+
+/*****************************************************************
 * Function:     QSDK_Get_Str 
 * 
 * Description:
@@ -74,11 +122,10 @@ s32 RIL_GetIMEI(char* imei);
 bool QSDK_Get_Str(char *src_string,  char *dest_string, unsigned char index);
 
 u32 open_param_parse_cmd(const char *cmd_string, const char *param_buffer, char *param_list[], u32 param_max_num);
-u32 open_onenet_push_param_parse_cmd(const char *cmd_string, u32 length, const char *param_buffer, char *param_list[], u32 param_max_num);
-
 u32 open_lwm2m_param_parse_cmd(const char *cmd_string, const char *param_buffer, char *param_list[], u32 param_max_num);
-u32 open_socket_rd_param_parse_cmd(const char *cmd_string, const char *param_buffer, char *param_list[], u32 param_max_num);
+u32 open_socket_rd_param_parse_cmd(const char *cmd_string, u32 recv_length, const char *param_buffer, char *param_list[], u32 param_max_num);
 u32 open_socket_push_param_parse_cmd(const char *cmd_string, const char *param_buffer, char *param_list[], u32 param_max_num);
+u32 open_socket_push_json_param_parse_cmd(const char *cmd_string, u32 recv_length, const char *param_buffer, char *param_list[], u32 param_max_num);
 char* Qstr_seacher_with( const char* line, u32 cmd_buf_len, const char* prefix );
 
 

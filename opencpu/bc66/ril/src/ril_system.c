@@ -42,8 +42,12 @@
 #include "ql_common.h"
 #include "ql_uart.h"
 #include "ql_type.h"
-#include "ril_onenet.h"
 #include "ril_lwm2m.h"
+
+#include <string.h>
+
+char *wiz_strtok(char *s, const char *delim);
+char *wiz_strsep(char **stringp, const char *delim);
 
 #ifdef __OCPU_RIL_SUPPORT__ 
 
@@ -51,13 +55,13 @@
 static s32 ATRsp_IMEI_Handler(char* line, u32 len, void* param)
 {
     char* pHead = NULL;
-    pHead = Ql_RIL_FindLine(line, len, "OK"); // find <CR><LF>OK<CR><LF>, <CR>OK<CR>£¬<LF>OK<LF>
+    pHead = Ql_RIL_FindLine(line, len, "OK"); // find <CR><LF>OK<CR><LF>, <CR>OK<CR>ï¿½ï¿½<LF>OK<LF>
     if (pHead)
     {  
         return RIL_ATRSP_SUCCESS;
     }
 
-    pHead = Ql_RIL_FindLine(line, len, "ERROR");// find <CR><LF>ERROR<CR><LF>, <CR>ERROR<CR>£¬<LF>ERROR<LF>
+    pHead = Ql_RIL_FindLine(line, len, "ERROR");// find <CR><LF>ERROR<CR><LF>, <CR>ERROR<CR>ï¿½ï¿½<LF>ERROR<LF>
     if (pHead)
     {  
         return RIL_ATRSP_FAILED;
@@ -94,8 +98,30 @@ s32 RIL_GetIMEI(char* imei)
     return Ql_RIL_SendATCmd(strAT, Ql_strlen(strAT), ATRsp_IMEI_Handler,(void*)imei, 0);
 }
 
+s32 RIL_QNbiotEvent_Enable(u32 event)
+{
+    char strAT[] = "AT+QNBIOTEVENT=1,1\n";
+    if (PSM_EVENT != event)
+    {
+        return RIL_AT_INVALID_PARAM;
+    }
+    return Ql_RIL_SendATCmd(strAT, Ql_strlen(strAT), NULL,NULL, 0);
+}
+
+
+s32 RIL_QNbiotEvent_Disable(u32 event)
+{
+    char strAT[] = "AT+QNBIOTEVENT=0,1\n";
+    if (PSM_EVENT != event)
+    {
+        return RIL_AT_INVALID_PARAM;
+    }
+    return Ql_RIL_SendATCmd(strAT, Ql_strlen(strAT), NULL,NULL, 0);
+}
+
+
 //[20180828][Buffer Mode][The custom interface handles data with character 00]
-u32 open_socket_rd_param_parse_cmd(const char *cmd_string, const char *param_buffer, char *param_list[], u32 param_max_num)
+u32 open_socket_rd_param_parse_cmd(const char *cmd_string, u32 recv_length, const char *param_buffer, char *param_list[], u32 param_max_num)
 {
     /*----------------------------------------------------------------*/
     /* Local Variables                                                */
@@ -107,78 +133,91 @@ u32 open_socket_rd_param_parse_cmd(const char *cmd_string, const char *param_buf
     u32 param_len, len;
 	u32 temp_length = 0;
 	extern bool recv_data_format;
-	
+	char* p_end = p + (recv_length - 2);  // two means last '\r\n'
+
     /*----------------------------------------------------------------*/
     /* Code Body                                                      */
     /*----------------------------------------------------------------*/
     p = strtok(p, "\r\n");
-    while (p != NULL && *p != '\0' && param_num < param_max_num) {
+    while (p != NULL && param_num < param_max_num) 
+	{
         // remove leading blanks & tabs
-        while (*p == ' ' || *p == '\t') {
+        while (*p == ' ' || *p == '\t')
+		{
             p++;
         }
         // remove double quotation
-        if (*p == '\"') {
+        if (*p == '\"')
+		{
             p2 = strchr(++p, '"');
-            if (p2 == NULL) {
+            if (p2 == NULL)
+			{
                 break;
             }
             len = p2 - p;
             strncpy(param, p, len);
             *(param + len) = '\0';
             p = p2;
-            strsep(&p, ",");
-        } else {
-            ptmp = strsep(&p, ",");
-            if (!ptmp)
-            {
-                break;
-            }
-			if ( param_num == 2 && (recv_data_format == 0) )
+            wiz_strsep(&p, ",");
+        } else 
+        {
+			if ( param_num == 2 )  //process json format data
 			{
-				Ql_memcpy(param, ptmp, temp_length);
+				if ( recv_data_format == 0 ) // text
+				{
+					Ql_memcpy(param, p, temp_length);
+					*(param + temp_length) = '\0';
+				}
+				else if ( recv_data_format == 1 ) // hex
+				{
+					Ql_memcpy(param, p, temp_length*2);
+					*(param + temp_length*2) = '\0';
+				}
+				param_list[param_num++] = param;
+				return param_num;
 			}
 			else
 			{
-            	strcpy(param, ptmp);
+				ptmp = Ql_strchr(p, ',');
+				if ( ptmp == NULL )  // Last
+				{
+					Ql_memcpy(param, p, (p_end - p));
+					*(param + (p_end - p)) = '\0';
+					param_list[param_num++] = param;
+					return param_num;
+				}
+				Ql_memcpy(param, p, (ptmp - p));
+				*(param + (ptmp - p)) = '\0';
+				p = ptmp + 1;
 			}
-            // remove post blanks & tabs 
-            if ( param_num == 2 && (recv_data_format == 0) )
-            {
-				param_len = temp_length;
-            }
-			else
+			
+			param_len = strlen(param);
+			for (i = param_len - 1; i >= 0; i--)
 			{
-            	param_len = strlen(param);
-				for (i = param_len - 1; i >= 0; i--) {
-		            if (*(param + i) == ' ' || *(param + i) == '\t') {
-		                *(param + i) = '\0';
-		            } else {
-		                break;
-		            }
-            	}
-			} 
+	            if (*(param + i) == ' ' || *(param + i) == '\t')
+				{
+	                *(param + i) = '\0';
+	            }
+				else
+	            {
+	                break;
+	            }
+        	}
         }
         // add to param_list
-		if ( param_num == 2 && (recv_data_format == 0) )
-		{
-			param_list[param_num++] = param;
+		param_list[param_num++] = param;
+	   	if ( param_num == 1 )
+	   	{
+			temp_length = Ql_atoi(param_list[0]);
 		}
-		else
-		{
-        	param_list[param_num++] = param;
-			if ( param_num == 1 && (recv_data_format == 0) )
-			{
-				temp_length = Ql_atoi(param_list[0]);
-			}
-		}
+		
         param = param + strlen(param) + 1;
     }
     return param_num;
 }
 
 
-//src_string="GPRMC,235945.799,V,,,,,0.00,0.00,050180,,,N" index =1  ·µ»ØTRUE ,dest_string="235945.799"; index =3£¬·µ»ØFALSE
+//src_string="GPRMC,235945.799,V,,,,,0.00,0.00,050180,,,N" index =1  ï¿½ï¿½ï¿½ï¿½TRUE ,dest_string="235945.799"; index =3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½FALSE
 bool QSDK_Get_Str(char *src_string,  char *dest_string, unsigned char index)
 {
     u32 SentenceCnt = 0;
@@ -226,7 +265,98 @@ bool QSDK_Get_Str(char *src_string,  char *dest_string, unsigned char index)
         return FALSE;
     }
 }
-//[20180829][Randy][Push Mode][The custom interface handles data with character 00]
+
+u32 open_socket_push_json_param_parse_cmd(const char *cmd_string, u32 recv_length, const char *param_buffer, char *param_list[], u32 param_max_num)
+{
+	/*----------------------------------------------------------------*/
+	/* Local Variables												  */
+	/*----------------------------------------------------------------*/
+	int i;
+	u32 param_num = 0;
+	char* p = (char *)cmd_string, *p2, *ptmp;
+	char* param = (char *)param_buffer;
+	u32 param_len, len;
+	u32 temp_length = 0;
+	extern bool recv_data_format;
+	char* p3 = p + (recv_length - 2);  // two means last '\r\n'
+	
+	/*----------------------------------------------------------------*/
+	/* Code Body													  */
+	/*----------------------------------------------------------------*/
+	p = strtok(p, "\r\n");
+	while (p != NULL && param_num < param_max_num)
+	{
+		// remove leading blanks & tabs
+		while (*p == ' ' || *p == '\t')
+		{
+			p++;
+		}
+		
+		if ( param_num == 3 && (recv_data_format == 0) )  // Customer parse JSON format data
+		{
+			Ql_memcpy(param, p, temp_length);
+			*(param + temp_length) = '\0';
+			param_list[param_num++] = param;
+			return param_num;
+		}
+		else
+		{	
+			ptmp = Ql_strchr(p, ',');
+			if ( ptmp == NULL )  //process last parameter
+			{
+				if ( param_num == 2 )  // this case is buffer mode recv data URC
+				{
+					Ql_memcpy(param, p, p3 - p);
+					*(param + (p3 - p)) = '\0';
+				}
+				else if ( param_num == 3 )
+				{
+					if ( recv_data_format == 1 )  //hex
+					{
+						Ql_memcpy(param, p, (temp_length * 2));
+						*(param + temp_length*2) = '\0';
+					}
+					else if ( recv_data_format == 0 ) //text
+					{
+						Ql_memcpy(param, p, temp_length);
+						*(param + temp_length) = '\0';
+					}
+				}
+				param_list[param_num++] = param;
+				return param_num;
+			}
+			Ql_memcpy(param, p, ptmp - p);
+			*(param + (ptmp - p)) = '\0';
+			p = ptmp + 1;
+
+			// remove post blanks & tabs
+		    param_len = strlen(param);
+		    for ( i = param_len - 1; i >= 0; i-- )
+			{
+		        if (*(param + i) == ' ' || *(param + i) == '\t')
+				{
+		            *(param + i) = '\0';
+		        } 
+				else
+				{
+		            break;
+		        }
+		    }
+		}
+
+		// add to param_list
+		param_list[param_num++] = param;
+		if ( param_num == 3 )          // hex/text need to use this parameter
+		{
+			temp_length = Ql_atoi(param_list[2]);
+		}
+		param = param + Ql_strlen(param) + 1;
+	}
+
+	return param_num;
+}
+
+//[Push Mode][The custom interface handles data with character 00]
 u32 open_socket_push_param_parse_cmd(const char *cmd_string, const char *param_buffer, char *param_list[], u32 param_max_num)
 {
 	/*----------------------------------------------------------------*/
@@ -259,9 +389,9 @@ u32 open_socket_push_param_parse_cmd(const char *cmd_string, const char *param_b
 			strncpy(param, p, len);
 			*(param + len) = '\0';
 			p = p2;
-			strsep(&p, ",");
+			wiz_strsep(&p, ",");
 		} else {
-			ptmp = strsep(&p, ",");
+			ptmp = wiz_strsep(&p, ",");
 			if (!ptmp)
 			{
 				break;
@@ -311,7 +441,7 @@ u32 open_socket_push_param_parse_cmd(const char *cmd_string, const char *param_b
 }
 
 
-//[20180821][Randy][The custom interface handles data with character 00]
+//[The custom interface handles data with character 00]
 u32 open_lwm2m_param_parse_cmd(const char *cmd_string, const char *param_buffer, char *param_list[], u32 param_max_num)
 {
     /*----------------------------------------------------------------*/
@@ -344,9 +474,9 @@ u32 open_lwm2m_param_parse_cmd(const char *cmd_string, const char *param_buffer,
             strncpy(param, p, len);
             *(param + len) = '\0';
             p = p2;
-            strsep(&p, ",");
+            wiz_strsep(&p, ",");
         } else {
-            ptmp = strsep(&p, ",");
+            ptmp = wiz_strsep(&p, ",");
             if (!ptmp)
             {
                 break;
@@ -396,15 +526,14 @@ u32 open_lwm2m_param_parse_cmd(const char *cmd_string, const char *param_buffer,
 }
 
 
-//[20180829][Randy]ÐÂÔö²éÕÒÖ¸¶¨×Ö·ûµÄ½Ó¿Ú£¬À´±ÜÃâÓÉÓÚstrstrµ¼ÖÂµÄ×Ö·û00½Ø¶Ï
 char* Qstr_seacher_with( const char* line, u32 cmd_buf_len, const char* prefix )
 {
-	if ( line == NULL || prefix == NULL || prefix == '\0' || cmd_buf_len < 0 )
+	if ( line == NULL || prefix == NULL || prefix == NULL || (int)cmd_buf_len < 0 )
 	{
 		return NULL;
 	}
 
-	char* temp_src = line;
+	char* temp_src = (char*)line;
 	int prefix_len = Ql_strlen(prefix);
 	int last_possible = cmd_buf_len - prefix_len + 1;
 
@@ -420,119 +549,6 @@ char* Qstr_seacher_with( const char* line, u32 cmd_buf_len, const char* prefix )
 		temp_src++;
 	}
 	return NULL;
-}
-
-
-//[20180829][Randy][The custom interface handles data with character 00]
-u32 open_onenet_push_param_parse_cmd(const char *cmd_string, u32 length, const char *param_buffer, char *param_list[], u32 param_max_num)
-{
-    /*----------------------------------------------------------------*/
-    /* Local Variables                                                */
-    /*----------------------------------------------------------------*/
-    int i;
-    u32 param_num = 0;
-    char* p = (char *)cmd_string, *p2, *ptmp, *p3;
-    char* param = (char *)param_buffer;
-    u32 param_len, len;
-	u32 temp_length = 0;
-	extern bool g_ONENET_PUSH_RECV_MODE;
-	
-    /*----------------------------------------------------------------*/
-    /* Code Body                                                      */
-    /*----------------------------------------------------------------*/
-    p3 = Qstr_seacher_with(p, length, "\r\n");
-	
-    while (p != NULL && param_num < param_max_num) {
-        // remove leading blanks & tabs
-        while (*p == ' ' || *p == '\t') {
-            p++;
-        }
-        // remove double quotation
-        if (*p == '\"') {
-            p2 = strchr(++p, '"');
-            if (p2 == NULL) {
-                break;
-            }
-            len = p2 - p;
-            strncpy(param, p, len);
-            *(param + len) = '\0';
-            p = p2;
-            strsep(&p, ",");
-        } else {
-            ptmp = Qstr_seacher_with(p, length, ",");
-			if ( ptmp == NULL ) //Last
-			{
-				Ql_memcpy(param, p, p3 - p);
-				
-				param_len = strlen(param);
-				for (i = param_len - 1; i >= 0; i--) {
-		            if (*(param + i) == ' ' || *(param + i) == '\t') {
-		                *(param + i) = '\0';
-		            } else {
-		                break;
-		            }
-            	}
-
-				param_list[param_num++] = param;
-				return param_num;
-			}
-							
-			length -= (ptmp-p+1);
-            if ( ptmp )
-            {
-                if ( param_num == 7 && (g_ONENET_PUSH_RECV_MODE == ONENET_RECV_MODE_TEXT) )
-				{
-					Ql_memcpy(param, p, temp_length);		
-					p = ptmp + 1;
-				}
-				else
-				{
-					int u = ptmp-p;
-	            	Ql_memcpy(param, p, u);
-					p = ptmp + 1;
-				}
-            }
-			else
-			{
-				break;
-			}
-			
-            // remove post blanks & tabs 
-            if ( param_num == 7 && (g_ONENET_PUSH_RECV_MODE == ONENET_RECV_MODE_TEXT) )
-            {
-				param_len = temp_length;
-            }
-			else
-			{
-            	param_len = strlen(param);
-				for (i = param_len - 1; i >= 0; i--) {
-		            if (*(param + i) == ' ' || *(param + i) == '\t') {
-		                *(param + i) = '\0';
-		            } else {
-		                break;
-		            }
-            	}
-			} 
-        }
-        // add to param_list
-		if ( param_num == 7 && (g_ONENET_PUSH_RECV_MODE == ONENET_RECV_MODE_TEXT) )
-		{
-			param_list[param_num++] = param;
-			param = param + temp_length + 1;
-		}
-		else
-		{
-        	param_list[param_num++] = param;
-			if ( param_num == 7 && (g_ONENET_PUSH_RECV_MODE == ONENET_RECV_MODE_TEXT) )
-			{
-				temp_length = Ql_atoi(param_list[6]);
-			}
-			param = param + strlen(param) + 1;
-		}
-        
-    }
-
-    return param_num;
 }
 
 
@@ -566,9 +582,9 @@ u32 open_param_parse_cmd(const char *cmd_string, const char *param_buffer, char 
             strncpy(param, p, len);
             *(param + len) = '\0';
             p = p2;
-            strsep(&p, ",");
+            wiz_strsep(&p, ",");
         } else {
-            ptmp = strsep(&p, ","); 
+            ptmp = wiz_strsep(&p, ","); 
             if (!ptmp)
             {
                 break;

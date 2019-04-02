@@ -41,6 +41,7 @@
 typedef enum{
     EINT_EDGE_TRIGGERED = 0,
     EINT_LEVEL_TRIGGERED,
+    EINT_CLOSE
 }Enum_EintType;
 
 

@@ -51,7 +51,7 @@ const char* g_InitCmds[] = {
     //"AT+CGREG=1\r", // GPRS registration events
     //"AT+CSCON=1\r",  // 
     //"AT+COLP=0\r"   // no connected line identification
-
+	"AT+QICFG?\r"		 //query dataformat
 //......  More customization setting can add here
 };
 

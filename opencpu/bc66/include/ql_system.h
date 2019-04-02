@@ -55,6 +55,7 @@ typedef struct {
 #define     MSG_ID_USER_START       0x1000
 #define     MSG_ID_RIL_READY        (MSG_ID_USER_START + 1)
 #define     MSG_ID_URC_INDICATION   (MSG_ID_USER_START + 2)
+#define     MSG_ID_APP_TEST         (MSG_ID_USER_START + 3)
 
 
 typedef enum {
@@ -192,6 +193,27 @@ s32 Ql_OS_GetMessage(ST_MSG* msg);
 *               OS_Q_FULL
 *****************************************************************/
 s32 Ql_OS_SendMessage(s32 destTaskId, u32 msgId, u32 param1, u32 param2);
+
+/*****************************************************************
+* Function:     Ql_OS_SendMessageFromISR 
+* 
+* Description:
+*               Send message between tasks,It Supports sending messages in ISR.
+
+* Parameters:
+*               destTaskId: 
+*                   One value of Enum_TaskId.
+*               msgId: 
+*                   User message id, must bigger than 0xFF.
+*               param1:
+*               param2:
+*                   Parameters to send to another task.
+* Return:        
+*               OS_SUCCESS
+*               OS_INVALID_ID
+*               OS_MEMORY_NOT_VALID
+*               OS_Q_FULL
+*****************************************************************/
 s32 Ql_OS_SendMessageFromISR(s32 destTaskId, u32 msgId, u32 param1, u32 param2);
 
 /*****************************************************************
@@ -214,7 +236,10 @@ u32 Ql_OS_CreateMutex(void);
 *               Obtain an instance of the specified MUTEX.
 
 * Parameters:
-*               mutexId: Mutex Id
+*               mutexId: 
+*                        Mutex Id
+*               block_time:
+*                        The time in ticks to wait for the mutex to become  available.unit:ms
 * Return:        
 *               None
 *****************************************************************/
@@ -239,10 +264,10 @@ void Ql_OS_GiveMutex(u32 mutexId);
 * Description:
 *               Creates a counting semaphore.
 * Parameters:
-*               semName: 
-*                   Name of semaphore
 *               maxCount: 
-*                   Initial value of semaphore
+*                   The maximum count value that can be reached.  When the semaphore reaches this value it can no longer be 'given'.
+*               InitialCount: 
+*                  The count value assigned to the semaphore when it is created.
 * Return:        
 *               Value of created semaphore
 *****************************************************************/
@@ -255,11 +280,10 @@ u32 Ql_OS_CreateSemaphore(u32 maxCount,u32 InitialCount);
 *               Obtain an instance of the specified semaphore.
 
 * Parameters:
-*               semId: Name of semaphore
-*               wait: [IN] wait mode, specify the behavior when the semaphore is
-*                   not ready immediately, it can be one the the following values:
-*                   TRUE  - wait until ownership can be satisfied.
-*                   FALSE - don't wait for other task gives ownership to it.
+*               semId:
+*                        A handle to the semaphore being taken - obtained when the semaphore was created.
+*               block_time: 
+*                        The time in ticks to wait for the semaphore to become available
 * Return:        
 *               OS_SUCCESS: the operation is done successfully
 *               OS_SEM_NOT_AVAILABLE: the semaphore is unavailable immediately.
@@ -273,7 +297,8 @@ u32 Ql_OS_TakeSemaphore(u32 semId, u32 block_time);
 *               Release the instance of the specified semaphore.
 
 * Parameters:
-*               semId: Name of semaphore
+*               semId: 
+*                       A handle to the semaphore being taken - obtained when the semaphore was created.
 * Return:        
 *               None
 *****************************************************************/
@@ -308,9 +333,11 @@ u32 Ql_OS_CreateEvent(void);
 *				Event id that is returned by calling Ql_OS_CreateEvent().
 *			evtFlag:
 *				Event flag type. Please refer to Enum_EventFlag.
+*               block_time:
+*                         The time in ticks to wait for the event to become available
 *
 * Return:        
-*			Zero indicates success, an nonzero means failure.
+*			Returns the current event flag group value.
 *****************************************************************/
 s32 Ql_OS_WaitEvent(u32 evtId, u32 evtFlag,u32 block_time);
 
@@ -328,7 +355,7 @@ s32 Ql_OS_WaitEvent(u32 evtId, u32 evtFlag,u32 block_time);
 *				Event flag type. Please refer to Enum_EventFlag.
 *
 * Return:        
-*			Zero indicates success, an nonzero means failure.
+*			Returns the current event flag group value.
 *****************************************************************/
 s32 Ql_OS_SetEvent(u32 evtId, u32 evtFlag);
 
@@ -408,7 +435,7 @@ s32 Ql_OS_GetActiveTaskId(void);
 *              OpenCPU has designed 2 blocks of system storage space to 
 *              backup critical user data. Developer may specify the first
 *              parameter index [1-2] to specify different storage block. 
-*              each blocks can store 50 bytes 
+*              each blocks can store 2048 bytes 
 *              2.
 *              User should not call this API function frequently, which is not
 *              good for life cycle of flash.
@@ -419,10 +446,10 @@ s32 Ql_OS_GetActiveTaskId(void);
 *              
 *               pData: 
 *                   [in] The data to be backed up. In 1~2 groups, every group can 
-*                   save 50 bytes at most. 
+*                   save 2048 bytes at most. 
 *
 *               len:
-*                   [in] The length of the user data. The maximum of this value is 50.
+*                   [in] The length of the user data. The maximum of this value is 2048B.
 * Return:       
 *               QL_RET_OK, this function succeeds.
 *             -1:An unknown error occurred,may be parameter is error.
@@ -445,7 +472,7 @@ s32 Ql_SecureData_Store(u8 index , u8* pData, u32 len);
 *                   [in] The index of the secure data block. The range is: 1~2.
 *
 *               len:
-*                   [in] The length of the user data. The maximum of this value is 50.
+*                   [in] The length of the user data. The maximum of this value is 2048B.
 * Return:       
 *               QL_RET_OK, this function succeeds.
 *             -1:An unknown error occurred,may be parameter is error.

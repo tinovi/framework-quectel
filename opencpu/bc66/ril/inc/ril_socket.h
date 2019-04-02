@@ -82,7 +82,6 @@ s32 remain_length;
 s32  connectID;
 }ST_RIL_SocketParam;
 
-//[20180829][Randy]add temp_format for store & read from NV
 typedef struct{
 	bool temp_send_data_format;
 	bool temp_recv_data_format;	

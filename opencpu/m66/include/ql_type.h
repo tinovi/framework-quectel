@@ -30,36 +30,39 @@
  *----------------------------------------------------------------------------
  * 
  ****************************************************************************/
- 
 
 #ifndef __QL_TYPE_H__
 #define __QL_TYPE_H__
 
 #ifndef FALSE
-#define FALSE    0
+#define FALSE 0
 #endif
 
 #ifndef TRUE
-#define TRUE     1
+#define TRUE 1
 #endif
 
 #ifndef NULL
-#define NULL    ((void *) 0)
+#define NULL ((void *)0)
 #endif
-
 
 /****************************************************************************
  * Type Definitions
  ***************************************************************************/
-typedef unsigned char       bool;
-typedef unsigned char       u8;
-typedef signed   char       s8;
-typedef unsigned short      u16;
-typedef          short      s16;
-typedef unsigned int        u32;
-typedef          int        s32;
-typedef unsigned long long  u64;
-typedef          long long  s64;
-typedef unsigned int        ticks;
+#ifndef ARDUINO
+typedef unsigned char bool;
+#else
+#include <stdbool.h>
+#endif
 
-#endif  // End-of __QL_TYPE_H__
+typedef unsigned char u8;
+typedef signed char s8;
+typedef unsigned short u16;
+typedef short s16;
+typedef unsigned int u32;
+typedef int s32;
+typedef unsigned long long u64;
+typedef long long s64;
+typedef unsigned int ticks;
+
+#endif // End-of __QL_TYPE_H__

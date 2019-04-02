@@ -52,7 +52,7 @@ typedef void (*Callback_Psm_Eint_Func)(void *user_data);
 * Function:     Ql_Rtc_RegisterFast 
 * 
 * Description:
-*               Register rtc,only support 15 RTC under opencpu task.
+*               Register rtc,only support one RTC under opencpu task.
 *
 * Parameters:
 *               timerId:
@@ -66,7 +66,7 @@ typedef void (*Callback_Psm_Eint_Func)(void *user_data);
 * Return:
 *               QL_RET_OK indicates register ok;
 *               QL_RET_ERR_PARAM indicates the param error.
-*               QL_RET_ERR_INVALID_TIMER indicates that the timer ID is already being used  
+*               QL_RET_ERR_INVALID_TIMER indicates that the rtc ID is already registered
 *               or the timer is started or stopped not in the same task with it registered.
 *               QL_RET_ERR_TIMER_FULL indicates all timers are used up.
 *               QL_RET_ERR_INVALID_TASK_ID indicates the task invalid.
@@ -84,9 +84,9 @@ s32 Ql_Rtc_RegisterFast(u32 rtcId, Callback_Rtc_Func callback_onTimer, void* par
 *
 * Parameters:
 *               timerId:
-*                       [in] rtc id, bigger than 0xFF,the timer id must be registed.
+*                       [in] rtc id, bigger than 0xFF,the rtc id must be registed.
 *               interval:
-*                       [in] Set the interval of the timer, unit: ms.
+*                       [in] Set the interval of the rtc, unit: ms.
 *                           this value must be is the multiple of 100ms
 *               autoRepeat:
 *                       [in] TRUE indicates that the rtc is executed repeatedly.
@@ -94,7 +94,7 @@ s32 Ql_Rtc_RegisterFast(u32 rtcId, Callback_Rtc_Func callback_onTimer, void* par
 * Return:
 *               QL_RET_OK indicates register ok;
 *               QL_RET_ERR_PARAM indicates the param error.
-*               QL_RET_ERR_INVALID_TIMER indicates that the timer ID is already being used  
+*               QL_RET_ERR_INVALID_TIMER indicates that the rtc ID is already registered
 *               or the timer is started or stopped not in the same task with it registered.
 *               QL_RET_ERR_TIMER_FULL indicates all timers are used up.
 *               QL_RET_ERR_INVALID_TASK_ID indicates the task invalid.
@@ -116,7 +116,7 @@ s32 Ql_Rtc_Start(u32 rtcId, u32 interval, bool autoRepeat);
 * Return:
 *               QL_RET_OK indicates register ok;
 *               QL_RET_ERR_PARAM indicates the param error.
-*               QL_RET_ERR_INVALID_TIMER indicates that the timer ID is already being used  
+*               QL_RET_ERR_INVALID_TIMER indicates that the rtc ID is already registered
 *               or the timer is started or stopped not in the same task with it registered.
 *               QL_RET_ERR_TIMER_FULL indicates all timers are used up.
 *               QL_RET_ERR_INVALID_TASK_ID indicates the task invalid.

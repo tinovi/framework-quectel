@@ -48,7 +48,7 @@ typedef enum {
 * Function:     Ql_SleepEnable 
 * 
 * Description:
-*               Set the module into sleep mode at once
+*               Enable the module into deep sleep mode.
 *
 * Return:        
 *               QL_RET_OK indicates this function successes.
@@ -60,7 +60,7 @@ s32 Ql_SleepEnable(void);
 * Function:     Ql_SleepDisable 
 * 
 * Description:
-*               Exit  the sleep mode 
+*               Disable the module into deep sleep mode.
 *
 * Return:        
 *               QL_RET_OK indicates this function successes.

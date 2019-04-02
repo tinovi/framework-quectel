@@ -39,6 +39,7 @@
 #include "ql_error.h"
 #include "ql_system.h"
 #include "ql_common.h"
+#include "ril_system.h"
 #include "ril_lwm2m.h"
 #include "ql_uart.h"
 
@@ -86,7 +87,7 @@ u32 remain_length;
 
 ST_Lwm2m_RD_TEMP_Param lwm2m_rd_temp_param= {0,0}; 
 
-volatile bool g_LWM2M_RECV_DATA_MODE = LWM2M_DATA_FORMAT_TEXT;
+volatile bool g_LWM2M_RECV_DATA_MODE = LWM2M_DATA_FORMAT_HEX;
 static s32 ATResponse_Handler(char* line, u32 len, void* userData)
 {
     RIL_LwM2M_DEBUG(DBG_Buffer,"[ATResponse_Handler] %s\r\n", (u8*)line);
@@ -170,8 +171,7 @@ static s32 ATResponse_Update_Handler(char* line, u32 len, void* userData)
 
 static s32 ATResponse_Send_Handler(char* line, u32 len, void* userData)
 {
-	//RIL_LwM2M_DEBUG(DBG_Buffer,"[ATResponse_Handler] %s\r\n", (u8*)line);
-	APP_DEBUG("%s\r\n", (u8*)line);
+	RIL_LwM2M_DEBUG(DBG_Buffer,"[ATResponse_Handler] %s\r\n", (u8*)line);
 	
 	if (Ql_RIL_FindLine(line, len, "SEND OK"))
 	{  
@@ -196,7 +196,6 @@ static s32 ATResponse_Send_Handler(char* line, u32 len, void* userData)
 	
 	return RIL_ATRSP_CONTINUE; //continue wait
 }
-
 
 
 static s32 ATResponse_Recv_Handler(char* line, u32 len, void* userData)
@@ -280,7 +279,7 @@ static s32 ATResponse_Close_Handler(char* line, u32 len, void* userData)
 {
 	RIL_LwM2M_DEBUG(DBG_Buffer,"[ATResponse_Handler] %s\r\n", (u8*)line);
 	
-	if (Ql_RIL_FindLine(line, len, "CLOSE OK"))
+	if (Ql_RIL_FindLine(line, len, "OK"))//ok or error 
 	{  
 		return	RIL_ATRSP_SUCCESS;
 	}
@@ -296,14 +295,13 @@ static s32 ATResponse_Close_Handler(char* line, u32 len, void* userData)
 	{
 		return	RIL_ATRSP_FAILED;
 	}
-	else if (Ql_RIL_FindString(line, len, "SEND FAIL"))
+	else if (Ql_RIL_FindString(line, len, "CLOSE FAIL"))
 	{
 		return	RIL_ATRSP_FAILED;
 	}
 	
 	return RIL_ATRSP_CONTINUE; //continue wait
 }
-
 
 static s32 ATResponse_Delete_Handler(char* line, u32 len, void* userData)
 {
@@ -441,7 +439,6 @@ s32 RIL_QLwM2M_Send(ST_Lwm2m_Send_Param_t *lwm2m_send_param_t)
 {
     s32 ret = RIL_AT_SUCCESS;
     char strAT[1024 + 100];
-	extern bool lwm2m_send_con_result;
 
 	Ql_memset(strAT, 0, sizeof(strAT));
 	if(NULL == lwm2m_send_param_t->buffer)
@@ -454,14 +451,12 @@ s32 RIL_QLwM2M_Send(ST_Lwm2m_Send_Param_t *lwm2m_send_param_t)
 	  Ql_sprintf(strAT, "AT+QLWDATASEND=%d,%d,%d,%d,%s,%s\n",lwm2m_send_param_t->obj_id,\
 	  lwm2m_send_param_t->ins_id,lwm2m_send_param_t->res_id,lwm2m_send_param_t->send_length,lwm2m_send_param_t->buffer,"0x0000");
       ret = Ql_RIL_SendATCmd(strAT,Ql_strlen(strAT),ATResponse_Handler,NULL,0);
-	  lwm2m_send_con_result = 0;
 	}
 	else if(LWM2M_SEND_MODE_CON == lwm2m_send_param_t->lwm2m_send_mode)
 	{
 	  Ql_sprintf(strAT, "AT+QLWDATASEND=%d,%d,%d,%d,%s,%s\n",lwm2m_send_param_t->obj_id,\
 	  lwm2m_send_param_t->ins_id,lwm2m_send_param_t->res_id,lwm2m_send_param_t->send_length,lwm2m_send_param_t->buffer,"0x0100");
       ret = Ql_RIL_SendATCmd(strAT,Ql_strlen(strAT),ATResponse_Send_Handler,NULL,0);
-	  lwm2m_send_con_result = 1;
 	}
 	
     RIL_LwM2M_DEBUG(DBG_Buffer,"<-- Send AT:%s, ret = %d -->\r\n",strAT, ret); 
@@ -495,7 +490,14 @@ s32 RIL_QLwM2M_RD(u32 rd_length,u32* actual_length,u32* remain_length,u8* data_b
 	{
     	*actual_length = Lwm2m_recv_param.actual_length;
     	*remain_length = Lwm2m_recv_param.remain_length;
-    	Ql_memcpy(data_buffer,Lwm2m_recv_param.buffer,Ql_strlen(Lwm2m_recv_param.buffer));
+    	if ( g_LWM2M_RECV_DATA_MODE == LWM2M_DATA_FORMAT_TEXT )
+    	{
+    		Ql_memcpy(data_buffer,Lwm2m_recv_param.buffer, *actual_length);
+    	}
+		else if ( g_LWM2M_RECV_DATA_MODE == LWM2M_DATA_FORMAT_HEX )
+		{
+			Ql_memcpy(data_buffer,Lwm2m_recv_param.buffer,Ql_strlen(Lwm2m_recv_param.buffer));
+		}
 	}
 	Ql_MEM_Free(Lwm2m_recv_param.buffer);
 	Lwm2m_recv_param.buffer = NULL;

@@ -47,7 +47,7 @@ static s32 m_iErrCode = 0; // Is used to record the specific error code
 s32 Ql_RIL_AT_GetErrCode(void) {return m_iErrCode;}
 //
 // Developer can call this API to set the error code when resolving the response for AT.
-s32 Ql_RIL_AT_SetErrCode(s32 errCode) {m_iErrCode = errCode;}
+s32 Ql_RIL_AT_SetErrCode(s32 errCode) {m_iErrCode = errCode; return errCode; }
 
 /******************************************************************************
 * Function:     Default_atRsp_callback
@@ -72,14 +72,34 @@ s32 Ql_RIL_AT_SetErrCode(s32 errCode) {m_iErrCode = errCode;}
 ******************************************************************************/
 s32 Default_atRsp_callback(char* line, u32 len, void* userdata)
 {
-    //Ql_Debug_Trace("[Default_atRsp_callback] %s\r\n", (u8*)line);
-    
-    if (Ql_RIL_FindLine(line, len, "OK"))// find <CR><LF>OK<CR><LF>,OK<CR><LF>, <CR>OK<CR>£¬<LF>OK<LF>
+	//Ql_Debug_Trace("[Default_atRsp_callback] %s\r\n", (u8*)line);
+
+	extern bool recv_data_format;
+	char* p1 = NULL, *temp = NULL;
+	char temp_num_buffer[5] = {0};
+	
+	p1 = Ql_strstr(line, "\"dataformat\"");
+	if ( p1 != NULL )
+	{
+		p1 += Ql_strlen("dataformat") + 2;    //add double quotation marks 
+		p1++;
+		temp = Ql_strchr(p1, ',');            //parse send_data_format
+		if ( temp == NULL )
+		{
+			return RIL_ATRSP_CONTINUE;
+		}
+
+		p1 = temp + 1;
+		Ql_strncpy(temp_num_buffer, p1, 1);   //parse recv_data_format
+		recv_data_format = Ql_atoi(temp_num_buffer);
+	}
+
+    if (Ql_RIL_FindLine(line, len, "OK"))// find <CR><LF>OK<CR><LF>,OK<CR><LF>, <CR>OK<CR>��<LF>OK<LF>
     {
         m_iErrCode = RIL_ATRSP_SUCCESS;
         return  RIL_ATRSP_SUCCESS;
     }
-    else if (Ql_RIL_FindLine(line, len, "ERROR")) // find <CR><LF>ERROR<CR><LF>, <CR>ERROR<CR>£¬<LF>ERROR<LF>
+    else if (Ql_RIL_FindLine(line, len, "ERROR")) // find <CR><LF>ERROR<CR><LF>, <CR>ERROR<CR>��<LF>ERROR<LF>
     {
         m_iErrCode = RIL_ATRSP_FAILED;
         return  RIL_ATRSP_FAILED;

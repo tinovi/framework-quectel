@@ -247,6 +247,6 @@ s32  RIL_NW_ClosePDPContext(void);
 *                RIL_AT_UNINITIALIZED, RIL is not ready, need to wait for MSG_ID_RIL_READY
 *                                      and then call Ql_RIL_Initialize to initialize RIL.
 ******************************************************************************/
-s32  RIL_NW_GetOperator(char* operator);
+s32  RIL_NW_GetOperator(char*);
 
 #endif // __RIL_NETWORK_H__

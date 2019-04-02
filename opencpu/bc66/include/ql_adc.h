@@ -79,18 +79,18 @@ s32 Ql_ADC_Register(Enum_ADCPin adcPin, Callback_ADC callback_adc, void *customP
 *               Note:
 *               The ADC sampling result will be reported in the period of 
 *               (count * interval)(ms).
-*               For example, if Ql_ADC_Init(PIN_ADC0, 5, 400), then the 
-*               Callback_ADC function will be triggered in (5*400)ms=2s periodically.
+*               For example, if Ql_ADC_Init(PIN_ADC0, 5, 200), then the 
+*               Callback_ADC function will be triggered in (5*200)ms=1s periodically.
 * Parameters:
 *               adcPin:
 *                   ADC pin name, one value of Enum_ADCPin
 *
 *               count:
-*                   Sampling times for each ADC value, the minimum is 5.
+*                   Sampling times for each ADC value, the minimum is 1.
 *
 *               interval:
 *                   Interval of each internal sampling, unit is ms. 
-*                   the minimum is 200(ms).
+*                   the minimum is 10(ms).
 *
 *               For example, if Ql_ADC_Init(PIN_ADC0, 5, 200), then
 *               |--200ms--->|--200ms--->|--200ms--->|--200ms--->|--200ms--->|...

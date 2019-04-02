@@ -41,6 +41,7 @@
 #include "ql_trace.h"
 #include "ql_common.h"
 #include "ql_uart.h"
+#include "ril_system.h"
 #include "ril_socket.h"
 #ifdef __OCPU_RIL_SUPPORT__
 
@@ -53,12 +54,10 @@ static char DBG_Buffer[1024];
 #define RIL_SOCKET_DEBUG(BUF,...) 
 #endif
 
-#define RECV_BUFFER_LENGTH   1200//512
+#define RECV_BUFFER_LENGTH   1200
 
 volatile bool recv_data_format = FALSE;
 volatile bool send_data_format = FALSE;
-
-NV_DATA_FORMAT TEMP_DATA_FORMAT = {0, 0};
 
 static s32 ATResponse_Handler(char* line, u32 len, void* userData)
 {
@@ -166,7 +165,6 @@ static s32 ATRsp_Soc_Qird_Handler(char* line, u32 len, void* userdata)
     /*----------------------------------------------------------------*/
     ST_RIL_SocketParam *socket_param = (ST_RIL_SocketParam *)userdata;
     char *head = Ql_RIL_FindString(line, len, socket_param->prefix); //continue wait
-    char* param_buffer = (u8*)Ql_MEM_Alloc(1200);
 	char* param_list[20];
 	
 	/*----------------------------------------------------------------*/
@@ -176,49 +174,46 @@ static s32 ATRsp_Soc_Qird_Handler(char* line, u32 len, void* userdata)
     {
             char strTmp[10];
             char* p1 = NULL;
+			char* param_buffer = (u8*)Ql_MEM_Alloc(RECV_BUFFER_LENGTH);
 
-            p1 = Ql_strstr(head, ":");
-			p1 +=1;
+			p1 = Ql_strstr(head, "+QIRD:");
+			p1 += Ql_strlen("+QIRD: ");
+			len -= (Ql_strlen("+QIRD: ") + 2);  // two means head '\r\n'
             if (p1)
             {
-				//[20180829][Randy]there need to read data format from nv
-				extern NV_DATA_FORMAT TEMP_DATA_FORMAT;
-				u32 ret = Ql_SecureData_Read(1, (u8*)&TEMP_DATA_FORMAT, sizeof(NV_DATA_FORMAT));	//[20180829][Randy] 	
-				RIL_SOCKET_DEBUG(DBG_Buffer, "TEMP_DATA_FORMAT.temp_send_data_format = %d TEMP_DATA_FORMAT.temp_recv_data_format = %d\r\n", TEMP_DATA_FORMAT.temp_send_data_format, TEMP_DATA_FORMAT.temp_recv_data_format);
-				recv_data_format = TEMP_DATA_FORMAT.temp_recv_data_format;
-				
-				u32 param_num = open_socket_rd_param_parse_cmd(p1, param_buffer, param_list, 20);
+				u32 param_num = open_socket_rd_param_parse_cmd(p1, len, param_buffer, param_list, 20);
 				socket_param->length = Ql_atoi(param_list[0]);
 				RIL_SOCKET_DEBUG(DBG_Buffer,"param_num = %d [socket_param->length] %d\r\n", param_num, socket_param->length);
 				if ( param_num == 3 )
 				{
 					socket_param->remain_length = Ql_atoi(param_list[1]);
 					RIL_SOCKET_DEBUG(DBG_Buffer,"[socket_param->length] %d\r\n", socket_param->remain_length);
-					char* recv_buffer = param_list[2];
-					RIL_SOCKET_DEBUG(DBG_Buffer,"recv_buf = %s\r\n", recv_buffer);
-
-					socket_param->buffer = (u8*)Ql_MEM_Alloc(1200);
-					Ql_memset(socket_param->buffer, 0x0, 1200);
 
 					RIL_SOCKET_DEBUG(DBG_Buffer,"recv_data_format = %d \r\n", recv_data_format);
 					if ( recv_data_format == 0 )
 					{
-						Ql_memcpy(socket_param->buffer, recv_buffer, socket_param->length);
-						RIL_SOCKET_DEBUG(DBG_Buffer,"111recv_data_format = %d [socket_param->buffer] %s\r\n",recv_data_format, socket_param->buffer);
+						Ql_memcpy(socket_param->buffer, param_list[2], socket_param->length);
+						RIL_SOCKET_DEBUG(DBG_Buffer,"recv_data_format = %d [socket_param->buffer] %s\r\n",recv_data_format, socket_param->buffer);
 					}
 					else if ( recv_data_format == 1 )
 					{
-						Ql_strncpy(socket_param->buffer, recv_buffer, socket_param->length*2 );
-						RIL_SOCKET_DEBUG(DBG_Buffer,"222recv_data_format = %d [socket_param->buffer] %s\r\n",recv_data_format, socket_param->buffer); 
+						Ql_strncpy(socket_param->buffer, param_list[2], socket_param->length*2 );
+						RIL_SOCKET_DEBUG(DBG_Buffer,"recv_data_format = %d [socket_param->buffer] %s\r\n",recv_data_format, socket_param->buffer); 
 					}
 				}
             }
-        return RIL_ATRSP_SUCCESS;
+			if ( param_buffer != NULL )
+        	{
+        		Ql_MEM_Free(param_buffer);
+        		param_buffer = NULL;
+        	}
+        return RIL_ATRSP_CONTINUE;
     }
+	
     head = Ql_RIL_FindLine(line, len, "OK");
     if(head)
     {  
-        return  RIL_ATRSP_CONTINUE;  
+        return  RIL_ATRSP_SUCCESS;  
     }
     head = Ql_RIL_FindLine(line, len, "ERROR");
     if(head)
@@ -253,10 +248,6 @@ static s32 ATRsp_Soc_Qiclose_Handler(char* line, u32 len, void* userData)
         return  RIL_ATRSP_FAILED;
     }
     else if (Ql_RIL_FindString(line, len, "+CME ERROR"))
-    {
-        return  RIL_ATRSP_FAILED;
-    }
-    else if (Ql_RIL_FindString(line, len, "SEND FAIL"))
     {
         return  RIL_ATRSP_FAILED;
     }

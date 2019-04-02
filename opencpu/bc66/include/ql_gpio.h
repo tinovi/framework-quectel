@@ -48,15 +48,15 @@ typedef enum{
     PINNAME_DCD,
     PINNAME_CTS_AUX,
     PINNAME_RTS_AUX,
-    PINNAME_GPIO1,
-    PINNAME_RXD_AUX,
-    PINNAME_TXD_AUX,
-    PINNAME_GPIO2,
-    PINNAME_GPIO3,
-    PINNAME_GPIO4,
-    PINNAME_GPIO5,
-    PINNAME_RXD_DBG,
-    PINNAME_TXD_DBG,
+    PINNAME_GPIO1,//not supports EINT
+    PINNAME_RXD_AUX,//not supports EINT
+    PINNAME_TXD_AUX,//not supports EINT
+    PINNAME_GPIO2,//not supports EINT
+    PINNAME_GPIO3,//not supports EINT
+    PINNAME_GPIO4,//not supports EINT
+    PINNAME_GPIO5,//not supports EINT
+    PINNAME_RXD_DBG,//not supports EINT
+    PINNAME_TXD_DBG,//not supports EINT
     PINNAME_END
 }Enum_PinName;
 
