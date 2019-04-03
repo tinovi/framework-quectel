@@ -50,10 +50,9 @@ int toupper(int c)
         return 'A' - 'a' + c;
     return c;
 }
-
-int *__errno() { return 0; }
 #endif
 
+int *__errno() { return 0; }
 
 int abs(int j)
 {
