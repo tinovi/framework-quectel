@@ -3,5 +3,5 @@
     "description": "Quectel Frameworks for PlatformIO",
     "url": "https://github.com/Wiz-IO/framework-quectel",
     "system": "*",
-    "version": "1.0.0"
+    "version": "2.0.1"
 }
