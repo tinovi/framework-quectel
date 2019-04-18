@@ -35,7 +35,7 @@
 #include "ril.h"
 #include "ril_util.h"
 #include "ril_sms.h"
-#include "ril_telephony.h "
+#include "ril_telephony.h"
 #include "ql_power.h"
 #include "ql_system.h"
 #include "ril_audio.h"
