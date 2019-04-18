@@ -33,7 +33,7 @@
 #include "custom_feature_def.h"
 #include "ril.h"
 #include "ril_util.h"
-#include "ril_telephony.h "
+#include "ril_telephony.h"
 #include "ql_stdlib.h"
 
 #if defined(__OCPU_RIL_SUPPORT__) 
