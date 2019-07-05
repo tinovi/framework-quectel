@@ -1,8 +1,22 @@
 /*
- * Dss.h
- *
- *  Created on: 29.06.2018
- *      Author: georgi.angelov
+    Created on: 29.06.2018
+    Author: Georgi Angelov
+        http://www.wizio.eu/
+        https://github.com/Wiz-IO    
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA   
  */
 
 #ifndef DSS_H_
@@ -47,8 +61,8 @@ class Dss
 	TX_THREAD *task;
 	UCHAR *stack;
 
-	bool connected;
-	bool started;
+	bool _connected;
+	bool _started;
 	dss_void_event onConnect;
 	dss_void_event onDisconnect;
 	dss_full_event onEvent;
@@ -63,8 +77,8 @@ class Dss
 	Dss(dss_full_event on_event);
 	Dss(dss_void_event on_connect, dss_void_event on_disconnect = NULL);
 	~Dss();
-	operator bool() { return isConnected(); }
-	bool isConnected();
+	operator bool() { return connected(); }
+	bool connected();
 	bool set(qapi_DSS_Call_Param_Identifier_t param, qapi_DSS_Call_Param_Value_t *pInfo);
 	bool set(qapi_DSS_Call_Param_Identifier_t param, char value);
 	bool apn(char *name, char *user = NULL, char *pass = NULL);
