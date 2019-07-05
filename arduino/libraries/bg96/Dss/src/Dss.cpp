@@ -1,8 +1,22 @@
 /*
- * Dss.cpp
- *
- *  Created on: 29.06.2018
- *      Author: georgi.angelov
+    Created on: 29.06.2018
+    Author: Georgi Angelov
+        http://www.wizio.eu/
+        https://github.com/Wiz-IO    
+
+  This library is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  This library is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA   
  */
 
 #include "Dss.h"
@@ -27,24 +41,20 @@ void Dss::callback(qapi_DSS_Hndl_t hndl, void *user, qapi_DSS_Net_Evt_t evt, qap
 		case QAPI_DSS_EVT_NET_IS_CONN_E:
 			//DEBUG_DSS("[DSS-CB] CONNECTED\n");
 			if (THIS->onConnect)
-			{
 				THIS->onConnect();
-			}
-			THIS->connected = true;
+			THIS->_connected = true;
 			THIS->state = DSS_ACTED;
 			break;
 		case QAPI_DSS_EVT_NET_NO_NET_E:
 			//DEBUG_DSS("[DSS-CB] DISCONNECTED\n");
-			THIS->connected = false;
-			THIS->started = false;
+			THIS->_connected = false;
+			THIS->_started = false;
 			THIS->state = DSS_DEACTED;
 			if (THIS->onDisconnect)
-			{
 				THIS->onDisconnect();
-			}
 			break;
 		default:
-			DEBUG_DSS("[DSS-CB] evt: %d\n", evt);
+			//DEBUG_DSS("[DSS-CB] evt: %d\n", evt);
 			break;
 		}
 	}
@@ -192,17 +202,17 @@ void Dss::close()
 	if (handle)
 		qapi_DSS_Rel_Data_Srvc_Hndl(handle);
 	handle = NULL;
-	connected = false;
-	started = false;
+	_connected = false;
+	_started = false;
 }
 
 bool Dss::act()
 {
-	if (!handle || started)
+	if (!handle || _started)
 		return false;
 	tx_event_flags_set(event, 0, TX_AND);
-	started = qapi_DSS_Start_Data_Call(handle) == 0;
-	return started;
+	_started = qapi_DSS_Start_Data_Call(handle) == 0;
+	return _started;
 }
 
 bool Dss::act(bool blocked)
@@ -225,7 +235,7 @@ AGAIN:
 
 bool Dss::deact(void)
 {
-	if (!handle || !started)
+	if (!handle || !_started)
 		return false;
 	tx_event_flags_set(event, 0, TX_AND);
 	return qapi_DSS_Stop_Data_Call(handle) == 0; // started flag wiil cleared in cb
@@ -250,9 +260,9 @@ AGAIN:
 	return res;
 }
 
-bool Dss::isConnected()
+bool Dss::connected()
 {
-	return connected;
+	return _connected;
 }
 
 bool Dss::statistic(qapi_DSS_Data_Pkt_Stats_s *s, bool reset)
