@@ -1,3 +1,0 @@
-[20.09.2019]
-* BC66 OpenCPU v 1.4
-* BC66 Arduino for BC66NBR01A07
