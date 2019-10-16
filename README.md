@@ -1,7 +1,7 @@
 # Quectel framework for [PlatformIO](http://platformio.org)
 Тhis is part of [Quectel development platform for PlatformIO](https://github.com/Wiz-IO/platform-quectel)
 
-Version 2.0.5 [16.10.2019]
+Version 2.0.7 [16.10.2019]
 * EC2x OpenLinux
 * EC2x Arduino
 
