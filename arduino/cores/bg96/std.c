@@ -222,7 +222,7 @@ extern long atol(const char *s)
     if (s)
     {
         extern int sscanf(const char *s, const char *format, ...);
-        sscanf(s, "%l", &val);
+        sscanf(s, "%ld", &val);
     }
     return val;
 }
@@ -331,6 +331,6 @@ extern char *ultoa(unsigned long value, char *result, int base)
 extern double atof(const char *s)
 {
     double val;
-    sscanf(s, "%f", &val);
+    sscanf(s, "%lf", &val);
     return val;
 }
