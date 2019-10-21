@@ -28,7 +28,7 @@ extern "C"
 
 #include "common.h"
 #include "snprintf.h"
-#include "qapi_uart.h"
+#include <qapi_uart.h>
 #include <stdarg.h>
 #include <string.h>
 
