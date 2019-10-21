@@ -157,7 +157,7 @@ extern void __cxa_deleted_virtual(void)
     abort();
 }
 
-int *__errno()
+int *__errno(void)
 {
     return 0;
 }
