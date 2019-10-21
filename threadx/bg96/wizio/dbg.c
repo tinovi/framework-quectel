@@ -59,7 +59,7 @@ void log_buf(const char *text, const unsigned char *buf, unsigned int len)
         return;
     char txt[17];
     unsigned int i, idx = 0;
-    snprintf(bufferDump + idx, sizeof(bufferDump) - idx, "[DMP] %s 0x%08X (%u bytes)\n", text, buf, (unsigned int)len);
+    snprintf(bufferDump + idx, sizeof(bufferDump) - idx, "[DMP] %s 0x%08X (%u bytes)\n", text, (int)buf, (unsigned int)len);
     log_printf(bufferDump);
     idx = 0;
     memset(txt, 0, sizeof(txt));
