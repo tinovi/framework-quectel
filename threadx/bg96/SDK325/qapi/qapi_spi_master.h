@@ -119,8 +119,9 @@ when         who     what, where, why
 
 //QuectelModifyFlag
 /*this is used in spi transfer callback function*/
-typedef enum SpiTransferStatus SpiTransferStatus;
-enum SpiTransferStatus
+//typedef enum SpiTransferStatus SpiTransferStatus;
+//enum SpiTransferStatus
+typedef enum /* edit: WizIO */
 {
    QAPI_SPI_QUEUED = 1,/**< The transaction is queued, will be processed by the core in order in which it arrived.*/
    QAPI_SPI_COMPLETE,/**< The transaction is complete.*/
@@ -133,7 +134,7 @@ enum SpiTransferStatus
 			  The client has to retry the call.*/
    QAPI_SPI_INVALID_ID,/**< An incorrect transfer id was provided while requesting for the status of a transfer.*/
    QAPI_SPI_INVALID_PARAMETER/**< Spi transfer parameter provided by the Client  was invalid.*/
-};
+}SpiTransferStatus;
 
 
 
@@ -441,7 +442,7 @@ qapi_Status_t qapi_SPIM_Close (void *spi_handle);
                                                                     (ULONG) spi_Handle, (ULONG) 0,(ULONG) 0, \
                                                                     (ULONG) 0)	
 
-
+#if 0 /* edit: WizIO */
 int qapi_spi_cb_uspace_dispatcher(UINT cb_id, void *app_cb,
 									UINT cb_param1, UINT cb_param2,
 									UINT cb_param3, UINT cb_param4,
@@ -458,6 +459,7 @@ int qapi_spi_cb_uspace_dispatcher(UINT cb_id, void *app_cb,
         }
 		return 0;
 }
+#endif
 
 
 #else   // DEF_END

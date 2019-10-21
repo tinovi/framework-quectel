@@ -528,7 +528,8 @@ int i2c_module_cb_manager(UINT cb_id, void *app_cb,
 									 UINT cb_param3, UINT cb_param4,
 									 UINT cb_param5, UINT cb_param6,
 									 UINT cb_param7, UINT cb_param8);
-									 
+
+#if 0	/* edit: WizIO */						 
 int i2c_module_cb_manager(UINT cb_id, void *app_cb, 
 									 UINT cb_param1, UINT cb_param2, 
 									 UINT cb_param3, UINT cb_param4,
@@ -544,6 +545,8 @@ int i2c_module_cb_manager(UINT cb_id, void *app_cb,
 	}
 	return 0;
 }
+#endif
+
 #else   // DEF_END
 
 #error "No QAPI flags defined"
