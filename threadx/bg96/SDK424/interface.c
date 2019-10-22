@@ -33,17 +33,17 @@ static TXM_MODULE_INSTANCE *_txm_module_instance_ptr = NULL;
 SEC_LIB void TXM_MODULE_SHELL_ENTRY(TX_THREAD *thread_ptr, TXM_MODULE_THREAD_ENTRY_INFO *thread_info)
 {
 	fake_make_used();
-	if (thread_info->txm_module_thread_entry_info_start_thread)
+	if (thread_info->txm_module_thread_entry_info_start_thread) // [7]
 	{
-		_txm_module_instance_ptr = thread_info->txm_module_thread_entry_info_module;
-		_txm_module_entry_info = thread_info;
-		_txm_module_kernel_call_dispatcher = thread_info->txm_module_thread_entry_info_kernel_call_dispatcher;
+		_txm_module_instance_ptr = thread_info->txm_module_thread_entry_info_module;						   // [1]
+		_txm_module_entry_info = thread_info;																   // [0]
+		_txm_module_kernel_call_dispatcher = thread_info->txm_module_thread_entry_info_kernel_call_dispatcher; // [11]
 		while (NULL == _txm_module_kernel_call_dispatcher)
 			;
-		tx_thread_resume(thread_info->txm_module_thread_entry_info_callback_request_thread); // 66
+		tx_thread_resume(thread_info->txm_module_thread_entry_info_callback_request_thread); // call_dispatcher(66)
 	}
 	thread_info->txm_module_thread_entry_info_entry(thread_info->txm_module_thread_entry_info_parameter);
-	txm_module_thread_system_suspend(thread_ptr); // 91
+	txm_module_thread_system_suspend(thread_ptr); // call_dispatcher(91)
 }
 
 SEC_LIB void TXM_MODULE_CALLBACK_REQUEST(ULONG id)
@@ -189,48 +189,59 @@ SEC_LIB ULONG _txm_module_system_call12(ULONG request, ULONG param_1, ULONG para
 
 #define HIDWORD(Z) Z >> 32
 static int qapi_timer_user_initialized = 0;
-static qapi_TIMER_handle_t *timer_user_handle = NULL;
-char timer_client_stack[4096]; // Memory Protection !!!
+static ULONG timer_user_handle = 0; // qapi_TIMER_handle_t
 static TX_THREAD *timer_client_module_thread;
 static int timer_thread_state;
-int timer_client_cb_handler(ULONG arg);
+static char timer_client_stack[4096]; // MMU ???????????????
 
-SEC_LIB void qapi_timer_user_init(void)
+int timer_client_cb_handler(ULONG arg);
+SEC_LIB qapi_Status_t qapi_Timer_Get_Cbinfo(ULONG handle, void *cb);
+
+SEC_LIB int qapi_timer_user_init(void) // return bool : true = ok
 {
-	if (!qapi_timer_user_initialized)
+	int result = qapi_timer_user_initialized;
+	if (0 == qapi_timer_user_initialized)
 	{
-		_txm_module_system_call12(TXM_QAPI_TIMER_GET_USER_HANDLE, (ULONG)timer_user_handle, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65794
-		qapi_timer_user_initialized = 1;
+		// call(65794) TXM_QAPI_TIMER_GET_USER_HANDLE
+		if (_txm_module_system_call12(TXM_QAPI_TIMER_GET_USER_HANDLE, (ULONG)&timer_user_handle, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+			return 0; // ERROR
 		if (timer_user_handle)
 		{
-			txm_module_object_allocate(timer_client_module_thread, sizeof(TX_THREAD)); // 93
-			timer_thread_state = _txm_module_system_call11(
-				(ULONG)TXM_THREAD_CREATE_CALL, // 55
+			txm_module_object_allocate(&timer_client_module_thread, sizeof(TX_THREAD) /*280*/); // call(93)
+			result = _txm_module_system_call11(													// call(55) TXM_THREAD_CREATE_CALL
+				(ULONG)TXM_THREAD_CREATE_CALL,
 				(ULONG)timer_client_module_thread,
 				(ULONG) "TIMER_USER_THREAD",
 				(ULONG)timer_client_cb_handler,
 				(ULONG)timer_user_handle,
-				(ULONG)timer_client_stack, sizeof(timer_client_stack),
-				15, 1, 0, 1, 280);
-			if (timer_thread_state)
-				qapi_timer_user_initialized = 0;
-		}
-		else
+				(ULONG)timer_client_stack, // MMU ???????????????????
+				4096,					   // timer_client_stack[4096]
+				15,
+				1,
+				0,
+				1,
+				280);
+			timer_thread_state = result;
+			if (0 == result)
+			{
+				qapi_timer_user_initialized = 1;
+				return 1; // OK
+			}
 			qapi_timer_user_initialized = 0;
+			return 0; // ERROR
+		}
+		else // timer_user_handle = 0
+		{
+			qapi_timer_user_initialized = 0;
+			return 0; // ERROR
+		}
 	}
+	return result;
 }
 
-SEC_LIB qapi_Status_t qapi_Timer_Get_Cbinfo(ULONG handle, void *cb)
+SEC_LIB int timer_client_cb_handler(ULONG arg) // !!!
 {
-	if (cb && handle)
-		return _txm_module_system_call12(TXM_QAPI_TIMER_GET_CBINFO, (ULONG)handle, (ULONG)cb, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65793
-	else
-		return QAPI_ERR_INVALID_PARAM;
-}
-
-SEC_LIB int timer_client_cb_handler(ULONG arg)
-{
-	void (*cb)(int);
+	void (*cb)(int) = NULL;
 	int result = 0;
 	if (arg)
 	{
@@ -240,13 +251,23 @@ SEC_LIB int timer_client_cb_handler(ULONG arg)
 			if (result)
 				break;
 			if (cb)
-				cb(0); // ???
+				cb(0); // ?
 		}
 	}
 	return result;
 }
 
-SEC_LIB qapi_Status_t qapi_Timer_Def(qapi_TIMER_handle_t *timer_handle, qapi_TIMER_define_attr_t *timer_attr)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+SEC_LIB qapi_Status_t qapi_Timer_Get_Cbinfo(ULONG handle, void *cb) // pass
+{
+	if (cb && handle)
+		return _txm_module_system_call12(TXM_QAPI_TIMER_GET_CBINFO, (ULONG)handle, (ULONG)cb, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65793
+	else
+		return QAPI_ERR_INVALID_PARAM;
+}
+
+SEC_LIB qapi_Status_t qapi_Timer_Def(qapi_TIMER_handle_t *timer_handle, qapi_TIMER_define_attr_t *timer_attr) // pass
 {
 	if (!timer_handle || !timer_attr)
 		return QAPI_ERR_INVALID_PARAM;
@@ -255,51 +276,51 @@ SEC_LIB qapi_Status_t qapi_Timer_Def(qapi_TIMER_handle_t *timer_handle, qapi_TIM
 	return _txm_module_system_call12(TXM_QAPI_TIMER_DEF, (ULONG)timer_handle, (ULONG)timer_attr, (ULONG)timer_user_handle, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65786
 }
 
-SEC_LIB qapi_Status_t qapi_Timer_Undef(qapi_TIMER_handle_t timer_handle)
+SEC_LIB qapi_Status_t qapi_Timer_Undef(qapi_TIMER_handle_t timer_handle) // pass
 {
 	if (timer_handle)
 		return _txm_module_system_call12(TXM_QAPI_TIMER_UNDEF, (ULONG)timer_handle, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65789
 	return QAPI_ERR_INVALID_PARAM;
 }
 
-SEC_LIB qapi_Status_t qapi_Timer_Set(qapi_TIMER_handle_t timer_handle, qapi_TIMER_set_attr_t *timer_attr)
+SEC_LIB qapi_Status_t qapi_Timer_Set(qapi_TIMER_handle_t timer_handle, qapi_TIMER_set_attr_t *timer_attr) // pass
 {
 	if (timer_handle && timer_attr)
 		return _txm_module_system_call12(TXM_QAPI_TIMER_SET, (ULONG)timer_handle, (ULONG)timer_attr, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65787
 	return QAPI_ERR_INVALID_PARAM;
 }
 
-SEC_LIB qapi_Status_t qapi_Timer_Get_Timer_Info(qapi_TIMER_handle_t timer_handle, qapi_TIMER_get_info_attr_t *timer_get_info_attr, uint64_t *data)
+SEC_LIB qapi_Status_t qapi_Timer_Get_Timer_Info(qapi_TIMER_handle_t timer_handle, qapi_TIMER_get_info_attr_t *timer_get_info_attr, uint64_t *data) // pass
 {
 	if (timer_handle && timer_get_info_attr && data)
 		return _txm_module_system_call12(TXM_QAPI_TIMER_GET_INFO, (ULONG)timer_handle, (ULONG)timer_get_info_attr, (ULONG)data, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65790
 	return QAPI_ERR_INVALID_PARAM;
 }
 
-SEC_LIB qapi_Status_t qapi_Timer_Stop(qapi_TIMER_handle_t timer_handle)
+SEC_LIB qapi_Status_t qapi_Timer_Stop(qapi_TIMER_handle_t timer_handle) // pass
 {
 	if (timer_handle)
 		return _txm_module_system_call12(TXM_QAPI_TIMER_STOP, (ULONG)timer_handle, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65788
 	return QAPI_ERR_INVALID_PARAM;
 }
 
-SEC_LIB qapi_Status_t qapi_time_get(qapi_time_unit_type time_get_unit, qapi_time_get_t *time)
+SEC_LIB qapi_Status_t qapi_time_get(qapi_time_unit_type time_get_unit, qapi_time_get_t *time) // pass
 {
 	if (time_get_unit >= QAPI_TIME_STAMP && time_get_unit <= QAPI_TIME_JULIAN && time)
 		return _txm_module_system_call12(TXM_QAPI_TIME_GET, time_get_unit, (ULONG)time, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); //65792
 	return QAPI_ERR_INVALID_PARAM;
 }
 
-SEC_LIB qapi_Status_t qapi_Timer_Sleep(uint64_t timeout, qapi_TIMER_unit_type unit, qbool_t non_deferrable)
+SEC_LIB qapi_Status_t qapi_Timer_Sleep(uint64_t timeout, qapi_TIMER_unit_type unit, qbool_t non_deferrable) // pass
 {
 	if (unit < 6)
-		return _txm_module_system_call12(TXM_QAPI_TIMER_SLEEP, HIDWORD(timeout), timeout, unit, non_deferrable, 0, 0, 0, 0, 0, 0, 0, 0); //65791
+		return _txm_module_system_call12(TXM_QAPI_TIMER_SLEEP, HIDWORD(timeout), timeout, unit, non_deferrable, 0, 0, 0, 0, 0, 0, 0, 0); // 65791
 	return QAPI_ERR_INVALID_PARAM;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-SEC_LIB ULONG psm_user_space_dispatcher(ULONG request, ULONG (*func)(ULONG), ULONG arg)
+SEC_LIB ULONG psm_user_space_dispatcher(ULONG request, ULONG (*func)(ULONG), ULONG arg) // pass
 {
 	if (request == 108 && func)
 		return func(arg);
@@ -308,7 +329,7 @@ SEC_LIB ULONG psm_user_space_dispatcher(ULONG request, ULONG (*func)(ULONG), ULO
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-SEC_LIB ULONG diag_user_space_dispatcher(ULONG request, ULONG (*func)(ULONG), ULONG arg)
+SEC_LIB ULONG diag_user_space_dispatcher(ULONG request, ULONG (*func)(ULONG), ULONG arg) // pass
 {
 	if (request == 102 && func)
 		return func(arg);
