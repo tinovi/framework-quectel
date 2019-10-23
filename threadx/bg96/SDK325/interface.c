@@ -26,9 +26,9 @@ SEC_LIB void fake_make_used(void) /* GCC MAKE PREAMBLE USED - DONT TOUCH */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ULONG(*_txm_module_kernel_call_dispatcher)
-(ULONG, ULONG, ULONG, ULONG);						  // = NULL;
+(ULONG, ULONG, ULONG, ULONG);                         // = NULL;
 TXM_MODULE_THREAD_ENTRY_INFO *_txm_module_entry_info; // = NULL;
-TXM_MODULE_INSTANCE *_txm_module_instance_ptr;		  // = NULL;
+TXM_MODULE_INSTANCE *_txm_module_instance_ptr;        // = NULL;
 
 SEC_LIB void TXM_MODULE_SHELL_ENTRY(TX_THREAD *thread_ptr, TXM_MODULE_THREAD_ENTRY_INFO *thread_info)
 {
