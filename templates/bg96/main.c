@@ -67,7 +67,7 @@ int quectel_dbg_uart_init(qapi_UART_Port_Id_e port_id)
 __attribute__((section(".library"))) int TXM_MODULE_THREAD_ENTRY(void)
 {
     heap_init();
-    if (quectel_dbg_uart_init(QAPI_UART_PORT_002_E)) // EVB Debug Port
+    if (quectel_dbg_uart_init(QAPI_UART_PORT_002_E)) // QAPI_UART_PORT_002_E ---> EVB COM2(DEBUG)
         abort();
     qt_uart_dbg(uart_conf.hdlr, "\nThreadX BG96 Hello World");
     while (1)
