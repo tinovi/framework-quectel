@@ -1,6 +1,7 @@
 /*
  *  Created on: 09.05.2018
  *      Author: Georgi Angelov
+ * 	for SDK3 and SDK4
  */
 
 #include "txm_module.h"
@@ -26,55 +27,71 @@ SEC_LIB void fake_make_used(void) /* GCC MAKE PREAMBLE USED - DONT TOUCH */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ULONG(*_txm_module_kernel_call_dispatcher)
-(ULONG, ULONG, ULONG, ULONG) = NULL;
-static TXM_MODULE_THREAD_ENTRY_INFO *_txm_module_entry_info = NULL;
-static TXM_MODULE_INSTANCE *_txm_module_instance_ptr = NULL;
+(ULONG, ULONG, ULONG, ULONG);						  
+TXM_MODULE_THREAD_ENTRY_INFO *_txm_module_entry_info; 
+TXM_MODULE_INSTANCE *_txm_module_instance_ptr;		  
 
-SEC_LIB void TXM_MODULE_SHELL_ENTRY(TX_THREAD *thread_ptr, TXM_MODULE_THREAD_ENTRY_INFO *thread_info)
+SEC_LIB void TXM_MODULE_SHELL_ENTRY(TX_THREAD *thread_ptr, TXM_MODULE_THREAD_ENTRY_INFO *thread_info) // pass
 {
 	fake_make_used();
-	if (thread_info->txm_module_thread_entry_info_start_thread) // [7]
+	if (thread_info->txm_module_thread_entry_info_start_thread)
 	{
-		_txm_module_instance_ptr = thread_info->txm_module_thread_entry_info_module;						   // [1]
-		_txm_module_entry_info = thread_info;																   // [0]
-		_txm_module_kernel_call_dispatcher = thread_info->txm_module_thread_entry_info_kernel_call_dispatcher; // [11]
+		_txm_module_instance_ptr = thread_info->txm_module_thread_entry_info_module;
+		_txm_module_entry_info = thread_info;
+		_txm_module_kernel_call_dispatcher = thread_info->txm_module_thread_entry_info_kernel_call_dispatcher;
 		while (NULL == _txm_module_kernel_call_dispatcher)
-			;
-		tx_thread_resume(thread_info->txm_module_thread_entry_info_callback_request_thread); // call_dispatcher(66)
+		{
+		}
+		tx_thread_resume(thread_info->txm_module_thread_entry_info_callback_request_thread); // call(66)
 	}
 	thread_info->txm_module_thread_entry_info_entry(thread_info->txm_module_thread_entry_info_parameter);
-	txm_module_thread_system_suspend(thread_ptr); // call_dispatcher(91)
+	txm_module_thread_system_suspend(thread_ptr); // call(91)
 }
 
-SEC_LIB void TXM_MODULE_CALLBACK_REQUEST(ULONG id)
+SEC_LIB void TXM_MODULE_CALLBACK_REQUEST(ULONG id) // pass
 {
 	TXM_MODULE_CALLBACK_NOTIFY msg;
-	TX_QUEUE *req_queue = _txm_module_entry_info->txm_module_thread_entry_info_callback_request_queue;
-	TX_QUEUE *resp_queue = _txm_module_entry_info->txm_module_thread_entry_info_callback_response_queue;
+	TX_QUEUE *request = _txm_module_entry_info->txm_module_thread_entry_info_callback_request_queue;
+	TX_QUEUE *response = _txm_module_entry_info->txm_module_thread_entry_info_callback_response_queue;
 	do
 	{
-		if (tx_queue_receive(req_queue, &msg, TX_NO_WAIT)) // 42
+		if (tx_queue_receive(request, &msg, -1)) // call(42)
 			break;
-		switch (msg.txm_module_callback_notify_type)
+		if (msg.txm_module_callback_notify_application_function)
 		{
-		case 0u:
-		case 1u:
-		case 2u:
-		case 3u:
-			((void (*)(ULONG))msg.txm_module_callback_notify_application_function)(msg.txm_module_callback_notify_param_1);
-			break;
-		case 4u:
-			((void (*)(ULONG, ULONG))msg.txm_module_callback_notify_application_function)(msg.txm_module_callback_notify_param_1, msg.txm_module_callback_notify_param_2);
-			break;
-		default:
-			break;
+			switch (msg.txm_module_callback_notify_type)
+			{
+			case 0u:
+			case 1u:
+			case 2u:
+			case 3u:
+				((void (*)(ULONG))msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_param_1);
+				break;
+			case 4u:
+				((void (*)(ULONG, ULONG))msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_param_1,
+					msg.txm_module_callback_notify_param_2);
+				break;
+			default:
+				msg.txm_module_callback_notify_param_1 = ((int (*)(int, void *, int, int, int, int, int))msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_type,
+					msg.txm_module_callback_notify_saved_app_cb,
+					msg.txm_module_callback_notify_param_1,
+					msg.txm_module_callback_notify_param_2,
+					msg.txm_module_callback_notify_param_3,
+					msg.txm_module_callback_notify_param_4,
+					msg.txm_module_callback_notify_param_5);
+				break;
+			}
 		}
-	} while (TX_SUCCESS == tx_queue_send(resp_queue, &msg, TX_NO_WAIT)); // 43
+
+	} while (!tx_queue_send(response, &msg, -1)); // call(43)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-SEC_LIB ULONG _txm_module_system_call4(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4)
+SEC_LIB ULONG _txm_module_system_call4(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4) // pass
 {
 	ULONG extra_parameters[2];
 	extra_parameters[0] = param_3;
@@ -82,7 +99,7 @@ SEC_LIB ULONG _txm_module_system_call4(ULONG request, ULONG param_1, ULONG param
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call5(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5)
+SEC_LIB ULONG _txm_module_system_call5(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5) // pass
 {
 	ULONG extra_parameters[3];
 	extra_parameters[0] = param_3;
@@ -91,7 +108,7 @@ SEC_LIB ULONG _txm_module_system_call5(ULONG request, ULONG param_1, ULONG param
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call6(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6)
+SEC_LIB ULONG _txm_module_system_call6(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6) // pass
 {
 	ULONG extra_parameters[4];
 	extra_parameters[0] = param_3;
@@ -101,7 +118,7 @@ SEC_LIB ULONG _txm_module_system_call6(ULONG request, ULONG param_1, ULONG param
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call7(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7)
+SEC_LIB ULONG _txm_module_system_call7(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7) // pass
 {
 	ULONG extra_parameters[5];
 	extra_parameters[0] = param_3;
@@ -112,7 +129,7 @@ SEC_LIB ULONG _txm_module_system_call7(ULONG request, ULONG param_1, ULONG param
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call8(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8)
+SEC_LIB ULONG _txm_module_system_call8(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8) // pass
 {
 	ULONG extra_parameters[6];
 	extra_parameters[0] = param_3;
@@ -124,7 +141,7 @@ SEC_LIB ULONG _txm_module_system_call8(ULONG request, ULONG param_1, ULONG param
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call9(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9)
+SEC_LIB ULONG _txm_module_system_call9(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9) // pass
 {
 	ULONG extra_parameters[7];
 	extra_parameters[0] = param_3;
@@ -137,7 +154,7 @@ SEC_LIB ULONG _txm_module_system_call9(ULONG request, ULONG param_1, ULONG param
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call10(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9, ULONG param_10)
+SEC_LIB ULONG _txm_module_system_call10(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9, ULONG param_10) // pass
 {
 	ULONG extra_parameters[8];
 	extra_parameters[0] = param_3;
@@ -151,7 +168,7 @@ SEC_LIB ULONG _txm_module_system_call10(ULONG request, ULONG param_1, ULONG para
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call11(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9, ULONG param_10, ULONG param_11)
+SEC_LIB ULONG _txm_module_system_call11(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9, ULONG param_10, ULONG param_11) // pass
 {
 	ULONG extra_parameters[9];
 	extra_parameters[0] = param_3;
@@ -166,7 +183,7 @@ SEC_LIB ULONG _txm_module_system_call11(ULONG request, ULONG param_1, ULONG para
 	return _txm_module_kernel_call_dispatcher(request, param_1, param_2, (ULONG)extra_parameters);
 }
 
-SEC_LIB ULONG _txm_module_system_call12(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9, ULONG param_10, ULONG param_11, ULONG param_12)
+SEC_LIB ULONG _txm_module_system_call12(ULONG request, ULONG param_1, ULONG param_2, ULONG param_3, ULONG param_4, ULONG param_5, ULONG param_6, ULONG param_7, ULONG param_8, ULONG param_9, ULONG param_10, ULONG param_11, ULONG param_12) // pass
 {
 	ULONG extra_parameters[10];
 	extra_parameters[0] = param_3;
@@ -183,81 +200,68 @@ SEC_LIB ULONG _txm_module_system_call12(ULONG request, ULONG param_1, ULONG para
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TIMER
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "qapi_timer.h"
 #include "qapi_timer_id.h"
 
 #define HIDWORD(Z) Z >> 32
 static int qapi_timer_user_initialized = 0;
-static ULONG timer_user_handle = 0; // qapi_TIMER_handle_t
+static ULONG timer_user_handle; // qapi_TIMER_handle_t
 static TX_THREAD *timer_client_module_thread;
 static int timer_thread_state;
-static char timer_client_stack[4096]; // MMU ???????????????
+static char timer_client_stack[4096]; 
 
-int timer_client_cb_handler(ULONG arg);
+SEC_LIB void timer_client_cb_handler(ULONG timer_user_handle);
 SEC_LIB qapi_Status_t qapi_Timer_Get_Cbinfo(ULONG handle, void *cb);
 
-SEC_LIB int qapi_timer_user_init(void) // return bool : true = ok
+SEC_LIB void qapi_timer_user_init(void) // need test
 {
-	int result = qapi_timer_user_initialized;
-	if (0 == qapi_timer_user_initialized)
+	if (qapi_timer_user_initialized != 1)
 	{
-		// call(65794) TXM_QAPI_TIMER_GET_USER_HANDLE
-		if (_txm_module_system_call12(TXM_QAPI_TIMER_GET_USER_HANDLE, (ULONG)&timer_user_handle, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-			return 0; // ERROR
+		qapi_timer_user_initialized = 1;
+		_txm_module_system_call12(0x10102u, (ULONG)&timer_user_handle, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0); // TXM_QAPI_TIMER_GET_USER_HANDLE 
 		if (timer_user_handle)
 		{
-			txm_module_object_allocate(&timer_client_module_thread, sizeof(TX_THREAD) /*280*/); // call(93)
-			result = _txm_module_system_call11(													// call(55) TXM_THREAD_CREATE_CALL
-				(ULONG)TXM_THREAD_CREATE_CALL,
+			_txm_module_kernel_call_dispatcher(0x5Du, (ULONG)&timer_client_module_thread, 280, 0); // txm_module_object_allocate
+			timer_thread_state = _txm_module_system_call11(
+				TXM_THREAD_CREATE_CALL, // 0x37u
 				(ULONG)timer_client_module_thread,
-				(ULONG) "TIMER_USER_THREAD",
+				(ULONG)"TIMER_USER_THREAD",
 				(ULONG)timer_client_cb_handler,
 				(ULONG)timer_user_handle,
-				(ULONG)timer_client_stack, // MMU ???????????????????
-				4096,					   // timer_client_stack[4096]
-				15,
-				1,
-				0,
-				1,
-				280);
-			timer_thread_state = result;
-			if (0 == result)
-			{
-				qapi_timer_user_initialized = 1;
-				return 1; // OK
-			}
-			qapi_timer_user_initialized = 0;
-			return 0; // ERROR
+				(ULONG)timer_client_stack,
+				(ULONG)4096,
+				(ULONG)15,
+				(ULONG)1,
+				(ULONG)0,
+				(ULONG)1,
+				(ULONG)280);
+			if (timer_thread_state)
+				qapi_timer_user_initialized = 0;
 		}
-		else // timer_user_handle = 0
+		else
 		{
 			qapi_timer_user_initialized = 0;
-			return 0; // ERROR
 		}
 	}
-	return result;
 }
 
-SEC_LIB int timer_client_cb_handler(ULONG arg) // !!!
+SEC_LIB void timer_client_cb_handler(ULONG timer_user_handle) // need test
 {
-	void (*cb)(int) = NULL;
-	int result = 0;
-	if (arg)
+	qapi_TIMER_get_cbinfo_t t;
+	if (timer_user_handle)
 	{
 		while (1)
 		{
-			result = qapi_Timer_Get_Cbinfo(arg, &cb);
-			if (result)
+			if (qapi_Timer_Get_Cbinfo(timer_user_handle, &t))
 				break;
-			if (cb)
-				cb(0); // ?
+			if (t.func_ptr)
+				((void(*)(int))t.func_ptr)(t.data); 
 		}
 	}
-	return result;
 }
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 SEC_LIB qapi_Status_t qapi_Timer_Get_Cbinfo(ULONG handle, void *cb) // pass
 {
