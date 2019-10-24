@@ -69,6 +69,17 @@ extern "C"
 #define SERIAL_BUFFER_SIZE 1024
 #endif
 
+#undef  assert
+#define assert(__e)         ((__e) ? (void)0 : abort())
+
+#define DELAY(T) 			qapi_Timer_Sleep(T, QAPI_TIMER_UNIT_MSEC, 1)
+
+#define MUTEX_LOCK(M) 		tx_mutex_get(M, TX_WAIT_FOREVER)
+#define MUTEX_UNLOCK(M) 	tx_mutex_put(M)
+
+#define EVENT_WAIT(E, M) 	tx_event_flags_get(E, M, TX_OR_CLEAR, &signal, TX_WAIT_FOREVER)
+#define EVENT_SEND(E, M) 	tx_event_flags_set(E, M, TX_OR);    
+    
 #define ENTER_CRITICAL()  \
     do                    \
     {                     \
