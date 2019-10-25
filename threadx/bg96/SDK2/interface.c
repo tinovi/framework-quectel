@@ -1,11 +1,20 @@
-/*
- *  Created on: 09.05.2018
- *      Author: Georgi Angelov
- */
-
-////////////////////////////////////////////////////////
-// BG96MAR02A07M1G_BETA0310A
-////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+//
+// Copyright 2020 Georgi Angelov
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+////////////////////////////////////////////////////////////////////////////////////////
 
 #include "txm_module.h"
 #include "tx_api.h"
@@ -23,11 +32,11 @@ SEC_LIB void fake_make_used(void) /* GCC MAKE PREAMBLE USED - DONT TOUCH */
 		__asm__ volatile("NOP");
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// 	QUALCOMM LIBRARIES
+// 	QUALCOMM THREADX LIBRARIES - SDK2
 //
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ULONG(*_txm_module_kernel_call_dispatcher)(ULONG, ULONG, ULONG, ULONG) = NULL;
 static TXM_MODULE_THREAD_ENTRY_INFO *_txm_module_entry_info = NULL;
@@ -58,19 +67,37 @@ SEC_LIB void TXM_MODULE_CALLBACK_REQUEST(ULONG id)
 	{
 		if (tx_queue_receive(req_queue, &msg, TX_NO_WAIT)) // 42
 			break;
-		switch (msg.txm_module_callback_notify_type)
+		if (msg.txm_module_callback_notify_application_function)
 		{
-		case 0u:
-		case 1u:
-		case 2u:
-		case 3u:
-			((void (*)(ULONG))msg.txm_module_callback_notify_application_function)(msg.txm_module_callback_notify_param_1);
-			break;
-		case 4u:
-			((void (*)(ULONG, ULONG))msg.txm_module_callback_notify_application_function)(msg.txm_module_callback_notify_param_1, msg.txm_module_callback_notify_param_2);
-			break;
-		default:
-			break;
+			switch (msg.txm_module_callback_notify_type)
+			{
+			case 0u:
+			case 1u:
+			case 2u:
+			case 3u:
+				((void (*)(ULONG))msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_param_1);
+				break;
+			case 4u:
+				((void (*)(ULONG, ULONG))msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_param_1,
+					msg.txm_module_callback_notify_param_2);
+				break;
+			default:
+				msg.txm_module_callback_notify_param_1 = ((int (*)(int, void *, int, int, int, int, int, int, int, int))
+						                            msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_type,
+					msg.txm_module_callback_notify_saved_app_cb,
+					msg.txm_module_callback_notify_param_1,
+					msg.txm_module_callback_notify_param_2,
+					msg.txm_module_callback_notify_param_3,
+					msg.txm_module_callback_notify_param_4,
+					msg.txm_module_callback_notify_param_5,
+					msg.txm_module_callback_notify_param_6,
+					msg.txm_module_callback_notify_param_7,
+					msg.txm_module_callback_notify_param_8);
+				break;
+			}
 		}
 	} while (TX_SUCCESS == tx_queue_send(resp_queue, &msg, TX_NO_WAIT)); // 43
 }
