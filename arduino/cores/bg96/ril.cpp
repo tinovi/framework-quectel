@@ -137,11 +137,12 @@ void Ril::ctor()
 			goto error;
 		}
 		//DEBUG_RIL("[RIL] CTOR: %d\n", port_id);
-		once = 0;
+		once = 0;		
 	}
 	return;
 error:
 	abort();
+	
 }
 
 void Ril::entry(void *p)
@@ -571,7 +572,7 @@ bool Ril::getIMEI(char *imei, size_t size)
 bool Ril::sleep(bool enable)
 {
 	if (enable)
-		send("AT+QSCLK=1\r\n", NULL);
+		return send("AT+QSCLK=1\r\n", NULL);
 	else
-		send("AT+QSCLK=0\r\n", NULL);
+		return send("AT+QSCLK=0\r\n", NULL);
 }

@@ -13,7 +13,11 @@ extern void loop();
 /// Arduino Task
 extern "C" __attribute__((section(".library"))) int TXM_MODULE_THREAD_ENTRY(void)
 {
-    //dbg_init();
+    
+#ifdef ENABLE_DEBUG
+    dbg_init();
+#endif
+
     heap_init();
     __libc_init_array();
     tx_thread_sleep(1);
