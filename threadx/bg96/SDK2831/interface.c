@@ -3,10 +3,6 @@
  *      Author: Georgi Angelov
  */
 
-////////////////////////////////////////////////////////
-// BG96MAR02A07M1G_BETA0310A
-////////////////////////////////////////////////////////
-
 #include "txm_module.h"
 #include "tx_api.h"
 #include "qapi_timer.h"
@@ -25,11 +21,12 @@ SEC_LIB void fake_make_used(void) /* GCC MAKE PREAMBLE USED - DONT TOUCH */
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// 	QUALCOMM LIBRARIES
+// 	QUALCOMM THREADX LIBRARIES - SDK2
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ULONG(*_txm_module_kernel_call_dispatcher)(ULONG, ULONG, ULONG, ULONG) = NULL;
+ULONG(*_txm_module_kernel_call_dispatcher)
+(ULONG, ULONG, ULONG, ULONG) = NULL;
 static TXM_MODULE_THREAD_ENTRY_INFO *_txm_module_entry_info = NULL;
 static TXM_MODULE_INSTANCE *_txm_module_instance_ptr = NULL;
 
@@ -42,37 +39,56 @@ SEC_LIB void TXM_MODULE_SHELL_ENTRY(TX_THREAD *thread_ptr, TXM_MODULE_THREAD_ENT
 		_txm_module_entry_info = thread_info;
 		_txm_module_kernel_call_dispatcher = thread_info->txm_module_thread_entry_info_kernel_call_dispatcher;
 		while (NULL == _txm_module_kernel_call_dispatcher)
-			;
-		tx_thread_resume(thread_info->txm_module_thread_entry_info_callback_request_thread); // 66
+		{
+		}
+		tx_thread_resume(thread_info->txm_module_thread_entry_info_callback_request_thread); // call(66)
 	}
 	thread_info->txm_module_thread_entry_info_entry(thread_info->txm_module_thread_entry_info_parameter);
-	txm_module_thread_system_suspend(thread_ptr); // 91
+	txm_module_thread_system_suspend(thread_ptr); // call(91)
 }
 
 SEC_LIB void TXM_MODULE_CALLBACK_REQUEST(ULONG id)
 {
 	TXM_MODULE_CALLBACK_NOTIFY msg;
-	TX_QUEUE *req_queue = _txm_module_entry_info->txm_module_thread_entry_info_callback_request_queue;
-	TX_QUEUE *resp_queue = _txm_module_entry_info->txm_module_thread_entry_info_callback_response_queue;
+	TX_QUEUE *request = _txm_module_entry_info->txm_module_thread_entry_info_callback_request_queue;
+	TX_QUEUE *response = _txm_module_entry_info->txm_module_thread_entry_info_callback_response_queue;
 	do
 	{
-		if (tx_queue_receive(req_queue, &msg, TX_NO_WAIT)) // 42
+		if (tx_queue_receive(request, &msg, -1)) // call(42)
 			break;
-		switch (msg.txm_module_callback_notify_type)
+		if (msg.txm_module_callback_notify_application_function)
 		{
-		case 0u:
-		case 1u:
-		case 2u:
-		case 3u:
-			((void (*)(ULONG))msg.txm_module_callback_notify_application_function)(msg.txm_module_callback_notify_param_1);
-			break;
-		case 4u:
-			((void (*)(ULONG, ULONG))msg.txm_module_callback_notify_application_function)(msg.txm_module_callback_notify_param_1, msg.txm_module_callback_notify_param_2);
-			break;
-		default:
-			break;
+			switch (msg.txm_module_callback_notify_type)
+			{
+			case 0u:
+			case 1u:
+			case 2u:
+			case 3u:
+				((void (*)(ULONG))msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_param_1);
+				break;
+			case 4u:
+				((void (*)(ULONG, ULONG))msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_param_1,
+					msg.txm_module_callback_notify_param_2);
+				break;
+			default:
+				msg.txm_module_callback_notify_param_1 = ((int (*)(int, void *, int, int, int, int, int, int, int, int))
+															  msg.txm_module_callback_notify_application_function)(
+					msg.txm_module_callback_notify_type,
+					msg.txm_module_callback_notify_saved_app_cb,
+					msg.txm_module_callback_notify_param_1,
+					msg.txm_module_callback_notify_param_2,
+					msg.txm_module_callback_notify_param_3,
+					msg.txm_module_callback_notify_param_4,
+					msg.txm_module_callback_notify_param_5,
+					msg.txm_module_callback_notify_param_6,
+					msg.txm_module_callback_notify_param_7,
+					msg.txm_module_callback_notify_param_8);
+				break;
+			}
 		}
-	} while (TX_SUCCESS == tx_queue_send(resp_queue, &msg, TX_NO_WAIT)); // 43
+	} while (TX_SUCCESS == tx_queue_send(response, &msg, -1)); // call(43)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -256,4 +272,3 @@ SEC_LIB qapi_Status_t qapi_Timer_set_absolute(qapi_TIMER_handle_t timer_handle, 
 {
 	return _txm_module_system_call12((ULONG)0x100FCu, (ULONG)timer_handle, (ULONG)(abs_time >> 32), (ULONG)abs_time, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
-
