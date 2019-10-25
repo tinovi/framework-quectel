@@ -40,10 +40,10 @@ public:
 
 	void begin(qapi_UART_Open_Config_t *cfg) {
 		uart->cfg.baud_Rate = cfg->baud_Rate;		
-        uart->cfg.bits_Per_Char = cfg->bits_Per_Char;
-        uart->cfg.num_Stop_Bits = cfg->num_Stop_Bits;	
-        uart->cfg.parity_Mode = cfg->parity_Mode; 
-        uart->cfg.enable_Flow_Ctrl = cfg->enable_Flow_Ctrl; 			
+       	        uart->cfg.bits_Per_Char = cfg->bits_Per_Char;
+                uart->cfg.num_Stop_Bits = cfg->num_Stop_Bits;	
+                uart->cfg.parity_Mode = cfg->parity_Mode; 
+                uart->cfg.enable_Flow_Ctrl = cfg->enable_Flow_Ctrl; 			
 		uart_open(uart);
 	}
 
@@ -67,13 +67,13 @@ public:
 	int setSpeed(int brg){ return uart_ioctl(uart, QAPI_SET_BAUD_RATE_E, &brg); }
 	int getSpeed() { 
 		if (uart)
-			return uart->cfg.baud_Rate;
+		    return uart->cfg.baud_Rate;
 		return -1;
 	}
 
 	operator bool() { 
 		if (uart) 
-			return uart->handle;
+		    return uart->handle;
 		return 0; 
 	}
 
@@ -84,4 +84,4 @@ extern HardwareSerial Serial;
 extern HardwareSerial Serial1;
 extern HardwareSerial Serial2;
 
-#endif
+#endif /* HardwareSerial_h */
