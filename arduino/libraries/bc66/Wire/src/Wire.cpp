@@ -86,6 +86,7 @@ void TwoWire::end()
 
 uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
 {
+	address = address << 1;
 	int res = -1;
 	if (quantity == 0)
 		return 0;
@@ -93,9 +94,9 @@ uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
 		return 0;
 	rxBuffer.clear();
 	res = Ql_IIC_Read(i2c_port, address, (uint8_t *)(rxBuffer._aucBuffer), (uint32_t)quantity);
+	DEBUG_I2C("[I2C] Ql_IIC_Read: %d\n", res);
 	if (res < 0)
 	{
-		DEBUG_I2C("[I2C] Ql_IIC_Read: %d\n", res);
 		quantity = 0;
 	}
 	rxBuffer._iHead = quantity;
@@ -109,7 +110,8 @@ uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity)
 
 void TwoWire::beginTransmission(uint8_t address)
 {
-	txAddress = address;
+	// Arduino is 7bit
+	txAddress = address << 1;
 	txBuffer.clear();
 	transmissionBegun = true;
 }
@@ -128,9 +130,9 @@ uint8_t TwoWire::endTransmission(bool stopBit)
 	if (txBuffer.available() == 0)
 		return 0;
 	int res = Ql_IIC_Write(i2c_port, txAddress, (uint8_t *)(txBuffer._aucBuffer), (uint32_t)txBuffer.available());
+	DEBUG_I2C("[I2C] Ql_IIC_Write: %d\n", res);
 	if (res < 0)
 	{
-		DEBUG_I2C("[I2C] Ql_IIC_Write: %d\n", res);
 		return 4;
 	}
 	return 0;
