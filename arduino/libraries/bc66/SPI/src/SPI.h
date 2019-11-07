@@ -77,6 +77,7 @@ class SPIClass
     bool _cpol;
     bool _cpha;
     bool _type;
+    bool _config;
 
     Enum_PinName _miso;
     Enum_PinName _mosi;

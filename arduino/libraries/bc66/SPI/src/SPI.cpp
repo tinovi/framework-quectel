@@ -8,7 +8,11 @@
 
 #define DEBUG_SPI /*DBG*/
 
-SPIClass SPI(0); // hardware spi, all other is software
+/* hardware spi (0), all other is software. hardware spi does currently not support
+   full-duplex. this means that transfer(...) will only tx data, not rx.
+   software SPI will allow full-duplex.
+*/
+SPIClass SPI(0);
 
 SPISettings::SPISettings(uint32_t clockFrequency, BitOrder bitOrder, SPIDataMode dataMode)
 {
@@ -20,7 +24,7 @@ SPISettings::SPISettings(uint32_t clockFrequency, BitOrder bitOrder, SPIDataMode
 /* default SPI setting */
 SPISettings::SPISettings()
 {
-    clock = 1000;
+    clock = 1000000;
     order = MSBFIRST;
     mode = SPI_MODE0;
 }
@@ -34,7 +38,7 @@ void SPIClass::set_hard_pins()
     _clk = PINNAME_SPI_SCLK;  //spi CLK pin, can not change to another pin.
     _cs = PINNAME_SPI_CS;     //spi CS pin, user can change this pin to annother pin.
     _type = 1;                //spi hardware
-    _port = 0;
+    _config = _cpha = _cpol = _port = 0;
 }
 
 SPIClass::SPIClass()
@@ -45,7 +49,9 @@ SPIClass::SPIClass()
 SPIClass::SPIClass(uint32_t port)
 {
     _port = port;
-    _type = 0;
+    _config = _type = _cpha = _cpol = 0;
+    _clock = 1000;
+
     if (0 == port)
         set_hard_pins();
 }
@@ -53,6 +59,9 @@ SPIClass::SPIClass(uint32_t port)
 SPIClass::SPIClass(uint32_t port, int miso, int mosi, int clk, int cs)
 {
     _port = port;
+    _config = _cpha = _cpol = 0;
+    _clock = 1000;
+
     if (0 == port)
     {
         set_hard_pins();
@@ -97,13 +106,22 @@ void SPIClass::setBitOrder(BitOrder order)
 
 void SPIClass::setDataMode(uint8_t mode)
 {
-    _cpol = (bool)mode & 2;
-    _cpha = (bool)mode & 1;
+    if (_cpha != (bool) mode & 1) {
+        _cpha = (bool) mode & 1;
+        _config = 0;
+    }
+    if (_cpol != (bool) mode & 2) {
+        _cpol = (bool) mode & 2;
+        _config = 0;
+    }
 };
 
 void SPIClass::setFrequency(uint32_t frequency)
 {
-    _clock = frequency;
+    if (_clock != frequency / 1000) {
+        _clock = frequency / 1000;
+        _config = 0;
+    }
 };
 
 /* Initializes the SPI bus by setting SCK,
@@ -111,13 +129,22 @@ void SPIClass::setFrequency(uint32_t frequency)
    MOSI low, and SS high */
 void SPIClass::begin()
 {
-    int res = Ql_SPI_Init(_port, _clk, _miso, _mosi, _cs, _type);
-    res = Ql_SPI_Config(_port, /*master*/ 1, _cpol, _cpha, _clock);
+    if (!_config) {
+        Ql_SPI_Uninit(_port);
+        int res = Ql_SPI_Init(_port, _clk, _miso, _mosi, _cs, _type);
+        if (res != QL_RET_OK)
+            DEBUG_SPI("[SPI] Ql_SPI_Init: %d\n", res);
+        res = Ql_SPI_Config(_port, /*master*/ 1, _cpol, _cpha, _clock);
+        if (res != QL_RET_OK)
+            DEBUG_SPI("[SPI] Ql_SPI_Config: %d\n", res);
+        _config = 1;
+    }
 }
 
 /* Disables the SPI bus (leaving pin modes unchanged) */
 void SPIClass::end()
 {
+    _config = 0;
     Ql_SPI_Uninit(_port);
     if (PINNAME_SPI_CS != _cs)
         Ql_GPIO_Uninit(_cs);
@@ -126,7 +153,6 @@ void SPIClass::end()
 /* Stop using the SPI bus. Normally this is called after de-asserting the chip select, to allow other libraries to use the SPI bus */
 void SPIClass::endTransaction(void)
 {
-    end();
 }
 
 /* Initializes the SPI bus using the defined SPISettings */
@@ -141,10 +167,17 @@ void SPIClass::beginTransaction(SPISettings settings)
 uint8_t SPIClass::transfer(uint8_t tx)
 {
     // Quectel spi_config.bit_order = HAL_SPI_MASTER_MSB_FIRST = 1;
-    uint8_t rx;
+    uint8_t rx = 0;
+    int res;
+
     if (_order == LSBFIRST)
         tx = __REV(__RBIT(tx));
-    int res = Ql_SPI_WriteRead(_port, &tx, 1, &rx, 1);
+    if (_type)
+        res = Ql_SPI_Write(_port, &tx, 1);
+    else
+        res = Ql_SPI_WriteRead_Ex(_port, &tx, 1, &rx, 1);
+    if (res != 1)
+        DEBUG_SPI("[SPI] Ql_SPI_Write byte res: %d\n", res);
     return res == 1 ? rx : 0;
 }
 
@@ -174,12 +207,14 @@ uint16_t SPIClass::transfer16(uint16_t _data)
 
 int SPIClass::transfer(uint8_t *tx, uint32_t wLen)
 {
-
     if (tx && wLen)
     {
         if (_order == MSBFIRST)
         {
-            return Ql_SPI_WriteRead(_port, tx, wLen, tx, wLen);
+            int res = Ql_SPI_Write(_port, tx, wLen);
+            if (res != wLen)
+                DEBUG_SPI("[SPI] Ql_SPI_Write len: %d res: %d\n", wLen, res);
+            return res;
         }
         else
         {
@@ -192,11 +227,18 @@ int SPIClass::transfer(uint8_t *tx, uint32_t wLen)
 
 int SPIClass::transfer(uint8_t *tx, uint32_t wLen, uint8_t *rx, uint32_t rLen)
 {
+    int res;
     if (tx && rx && wLen && rLen)
     {
         if (_order == MSBFIRST)
         {
-            return Ql_SPI_WriteRead(_port, tx, wLen, rx, rLen);
+            if (_type)
+                res = Ql_SPI_WriteRead(_port, tx, wLen, rx, rLen); // Half-Duplex Transfer!
+            else
+                res = Ql_SPI_WriteRead_Ex(_port, tx, wLen, rx, rLen); // Full-Duplex Transfer!
+            if (res != rLen)
+                DEBUG_SPI("[SPI] Ql_SPI_WriteRead txlen: %d rxlen: %d res: %d\n", wLen, rLen, res);
+            return res;
         }
         else
         {
