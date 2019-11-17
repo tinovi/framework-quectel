@@ -30,71 +30,66 @@ TX_BYTE_POOL *heap;
 static char heap_buffer[HEAP]; // from -D, user defined
 void heap_init(void)
 {
-    if (txm_module_object_allocate(&heap, sizeof(TX_BYTE_POOL)))
-        abort();
-    if (tx_byte_pool_create(heap, "heap_byte_pool", heap_buffer, HEAP))
-        abort();
+	if (txm_module_object_allocate(&heap, sizeof(TX_BYTE_POOL)))
+		abort();
+	if (tx_byte_pool_create(heap, "heap_byte_pool", heap_buffer, HEAP))
+		abort();
 }
 
 extern void free(void *ptr)
 {
-    if (ptr)
-        tx_byte_release(ptr);
+	if (ptr)
+		tx_byte_release(ptr);
 }
 
 extern void *malloc(size_t size)
 {
-    if (!size)
+	if (!size) 
+		return NULL;
+	void *ptr;
+	if (tx_byte_allocate(heap, (VOID **)&ptr, size, TX_NO_WAIT)){
+        DBG("[ERROR] malloc\n");
         return NULL;
-    void *ptr;
-    if (tx_byte_allocate(heap, (VOID **)&ptr, size, TX_NO_WAIT))
-    {
-        return NULL;
-    }
-    return ptr;
+    }		
+	return ptr;
 }
 
-extern void *realloc(void *mem, size_t newsize)
+extern void *realloc(void *ptr, size_t size)
 {
-    if (newsize == 0)
-    {
-        free(mem);
-        return NULL;
-    }
-    void *p;
-    p = malloc(newsize);
-    if (p)
-    {
-        if (mem != NULL)
-        {
-            memcpy(p, mem, newsize); // newsize !
-            free(mem);
-        }
-    }
-    return p;
+	if (0 == size)
+	{
+		free(ptr);
+		ptr = NULL;
+        DBG("[ERROR] realloc\n");
+		return NULL;
+	}
+	if (ptr)
+		free(ptr);
+	ptr = malloc(size);
+	return ptr;
 }
 
 extern void *calloc(size_t nmemb, size_t size)
 {
-    uint64_t total = (uint64_t)nmemb * size;
-    void *ret = malloc((size_t)total);
-    if (NULL == ret)
-    {
+	uint64_t total = (uint64_t)nmemb * size;
+	void *ret = malloc((size_t)total);
+	if (NULL == ret){
+        DBG("[ERROR] calloc\n");
         return NULL;
-    }
-    memset(ret, 0, (size_t)total);
-    return ret;
+    }		
+	memset(ret, 0, (size_t)total);
+	return ret;
 }
 
 extern char *strdup(const char *s)
 {
-    size_t len = strlen(s) + 1;
-    void *new = malloc(len);
-    if (NULL == new)
-    {
+	size_t len = strlen(s) + 1;
+	void *new = malloc(len);
+	if (NULL == new){
+        DBG("[ERROR] strdup\n");
         return NULL;
-    }
-    return (char *)memcpy(new, s, len);
+    }		
+	return (char *)memcpy(new, s, len);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -112,35 +107,35 @@ extern void _fini(void) __attribute__((weak));
 
 void __libc_init_array(void)
 {
-    size_t count;
-    size_t i;
-    count = __preinit_array_end - __preinit_array_start;
-    for (i = 0; i < count; i++)
-        __preinit_array_start[i]();
-    _init();
-    count = __init_array_end - __init_array_start;
-    for (i = 0; i < count; i++)
-        __init_array_start[i]();
+	size_t count;
+	size_t i;
+	count = __preinit_array_end - __preinit_array_start;
+	for (i = 0; i < count; i++)
+		__preinit_array_start[i]();
+	_init();
+	count = __init_array_end - __init_array_start;
+	for (i = 0; i < count; i++)
+		__init_array_start[i]();
 }
 
 void __libc_fini_array(void)
 {
-    size_t count;
-    size_t i;
-    count = __fini_array_end - __fini_array_start;
-    for (i = count; i > 0; i--)
-        __fini_array_start[i - 1]();
-    _fini();
+	size_t count;
+	size_t i;
+	count = __fini_array_end - __fini_array_start;
+	for (i = count; i > 0; i--)
+		__fini_array_start[i - 1]();
+	_fini();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 extern void abort(void)
 {
-    while (1)
-    {
-        qapi_Timer_Sleep(1, QAPI_TIMER_UNIT_SEC, 1); // dont block app
-    }
+	while (1)
+	{
+		qapi_Timer_Sleep(1, QAPI_TIMER_UNIT_SEC, 1); // dont block app
+	}
 }
 
 extern void __cxa_finalize(void *handle)
@@ -149,15 +144,15 @@ extern void __cxa_finalize(void *handle)
 
 extern void __cxa_pure_virtual(void)
 {
-    abort();
+	abort();
 }
 
 extern void __cxa_deleted_virtual(void)
 {
-    abort();
+	abort();
 }
 
-int *__errno(void)
+int *__errno()
 {
     return 0;
 }
@@ -181,7 +176,7 @@ int isxdigit(int c) { return (isdigit(c) || (c >= 'A' && c <= 'F') || (c >= 'a' 
 int isascii(int c) { return c >= 0 && c < 128; }
 int toascii(int c) { return c & 0177; }
 
-#if 1
+#if 0
 int tolower(int c)
 {
     if (isupper(c))
@@ -222,7 +217,7 @@ extern long atol(const char *s)
     if (s)
     {
         extern int sscanf(const char *s, const char *format, ...);
-        sscanf(s, "%ld", &val);
+        sscanf(s, "%l", &val);
     }
     return val;
 }
@@ -331,6 +326,6 @@ extern char *ultoa(unsigned long value, char *result, int base)
 extern double atof(const char *s)
 {
     double val;
-    sscanf(s, "%lf", &val);
+    sscanf(s, "%f", &val);
     return val;
 }

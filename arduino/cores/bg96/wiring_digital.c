@@ -106,7 +106,7 @@ int digitalRead(uint8_t pin)
     int r = qapi_TLMM_Read_Gpio(n->id, n->tlmm.pin, &val);
     if (r)
     {
-      DEBUG_GPIO("[ERROR] qapi_TLMM_Read_Gpio[%d] %d\n", pin, r);
+      DEBUG_GPIO("[ERROR] qapi_TLMM_Read_Gpio[%d] \d\n", pin, r);
     }
     return val;
   }
