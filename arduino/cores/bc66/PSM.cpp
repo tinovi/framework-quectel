@@ -15,7 +15,7 @@
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA   
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "PSM.h"
@@ -43,7 +43,7 @@ static void uint_to_binary_str(uint32_t num, char *str, int str_size, int bit_cn
 }
 
 static uint32_t tau_seconds[8] = {
-    10 * 600,
+    10 * 60, // 10 minutes
     3600,  // 1 hour
     36000, // 10 hours
     2,
@@ -52,19 +52,27 @@ static uint32_t tau_seconds[8] = {
     320 * 3600,
     (uint32_t)-1,
 };
+
 static inline uint32_t tauToSeconds(uint8_t tau)
 {
     return (tau & 31) * tau_seconds[tau >> 5];
 }
 
 static uint32_t act_seconds[8] = {2, 60, 6 * 60, 60, 60, 60, 60, 60};
+
 static inline uint32_t actToSeconds(uint8_t act)
 {
     return (act & 31) * act_seconds[act >> 5];
 }
 
+static inline uint32_t cycleToSeconds(uint8_t act)
+{
+    return (uint32_t) (((act & 15) - 1) * 20.48);
+}
+
 static int GET_CPSMS(char *line, u32 len, void *user)
 {
+    DEBUG_PSM("[PSM] Get AT Rsp: %s\n\r", line);
     char *h = Ql_RIL_FindLine(line, len, (char *)"OK");
     if (h)
         return RIL_ATRSP_SUCCESS;
@@ -90,6 +98,33 @@ static int GET_CPSMS(char *line, u32 len, void *user)
         if (at_tok_nextbinint(&h, &p->periodic) < 0)
             return RIL_ATRSP_FAILED;
         if (at_tok_nextbinint(&h, &p->active) < 0)
+            return RIL_ATRSP_FAILED;
+    }
+    return RIL_ATRSP_CONTINUE; //continue wait
+}
+
+static int GET_EDRXS(char *line, u32 len, void *user)
+{
+    DEBUG_PSM("[EDRXS] Get AT Rsp: %s\n\r", line);
+    char *h = Ql_RIL_FindLine(line, len, (char *)"OK");
+    if (h)
+        return RIL_ATRSP_SUCCESS;
+    h = Ql_RIL_FindLine(line, len, (char *)"ERROR");
+    if (h)
+        return RIL_ATRSP_FAILED;
+    h = Ql_RIL_FindString(line, len, (char *)"+CEDRXS:");
+    if (h) // +CEDRXS: 5,"0101"
+    {
+        if (NULL == user)
+            return RIL_ATRSP_FAILED;
+        cedrxs_t *p = (cedrxs_t *)user;
+        p->requested = 0;
+        p->mode = 0;
+        if (at_tok_start(&h) < 0)
+            return RIL_ATRSP_FAILED;
+        if (at_tok_nextint(&h, &p->mode) < 0)
+            return RIL_ATRSP_FAILED;
+        if (at_tok_nextbinint(&h, &p->requested) < 0)
             return RIL_ATRSP_FAILED;
     }
     return RIL_ATRSP_CONTINUE; //continue wait
@@ -128,7 +163,7 @@ bool PSMClass::limit(uint32_t seconds)
         PSMClass *p = (PSMClass *)THIS;
         if (p->m_wakeup_interval)
         {
-            
+
             api_rtc_start(p->m_wakeup_interval, 0); // one shot
             DEBUG_PSM("\n[PSM] Wakeup timer %lu ms\n", p->m_wakeup_interval);
         }
@@ -176,7 +211,7 @@ int PSMClass::getCellPsmActiveTime() {
       int t = api_get_psm_active();
     if (t)
         return actToSeconds(t);
-    return 0;  
+    return 0;
 }
 
 ///Get user PSM, return mode or error -1
@@ -195,6 +230,42 @@ bool PSMClass::get(int *period, int *active)
         }
     }
     return res;
+}
+
+bool PSMClass::getedrx(int *period)
+{
+    bool res = false;
+    if (period)
+    {
+        cedrxs_t c;
+        res = Ql_RIL_SendATCmd((char *)"AT+CEDRXS?\n", 10, GET_EDRXS, &c, 1000) == RIL_AT_SUCCESS;
+        if (res)
+        {
+            *period = cycleToSeconds(c.requested);
+            if (*period)
+                res = (bool) c.mode;
+            else
+                return false;
+        }
+    }
+    return res;
+}
+
+bool PSMClass::setedrx(int periodic_time, int mode)
+{
+    char cmd[64];
+    if (periodic_time == 0)
+        mode = 0;
+    if (mode == 0 || mode == 3)
+    {
+        snprintf(cmd, sizeof(cmd), "AT+CEDRXS=%d\n", mode);
+        return Ql_RIL_SendATCmd(cmd, Ql_strlen(cmd), NULL, NULL, 1000) == RIL_AT_SUCCESS;
+    }
+    else
+    {
+        DEBUG_PSM("[EDRX] Set Mode: %d Not supported yet", mode);
+        return false;
+    }
 }
 
 ///Set user PSM, Depends on the network, true = ok
@@ -297,7 +368,7 @@ bool PSMClass::set(int periodic_time, int active_time, int mode)
         uint_to_binary_str(active_timer, &at[3], sizeof(at) - 3, PSMTimerBits);
         pt[8] = '\0';
         snprintf(cmd, sizeof(cmd), "AT+CPSMS=1,,,\"%s\",\"%s\"\n", pt, at);
-        DEBUG_PSM("[PSM] AtCommand\n%s", cmd);
+        DEBUG_PSM("[PSM] Set AT Cmd: %s\n\r", cmd);
         return Ql_RIL_SendATCmd(cmd, strlen(cmd), NULL, NULL, 1000) == RIL_AT_SUCCESS;
     }
 }

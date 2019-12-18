@@ -15,7 +15,7 @@
 
   You should have received a copy of the GNU Lesser General Public
   License along with this library; if not, write to the Free Software
-  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA   
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #ifndef __PSM_H__
@@ -33,6 +33,12 @@ typedef struct
   int active;
   int mode;
 } cpsms_t;
+
+typedef struct
+{
+  int requested;
+  int mode;
+} cedrxs_t;
 
 class PSMClass
 {
@@ -60,7 +66,9 @@ public:
 
   ///get/set user times, can be ignored form cell
   bool get(int *period, int *active);
-  bool set(int periode, int active, int mode = 1);
+  bool getedrx(int *interval);
+  bool set(int periodic_time, int active, int mode = 1);
+  bool setedrx(int periodic_time, int mode = 1);
 
   ///Register onSleep event - RTC wakeup timer
   bool wakeup(uint32_t interval, sleep_callback_t cb = NULL);
