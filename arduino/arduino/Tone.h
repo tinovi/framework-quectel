@@ -11,7 +11,7 @@ extern "C" {
 }
 #endif
 
-extern void tone(uint8_t pin, unsigned int frequency, unsigned long duration = 0);
-extern void noTone(uint8_t pin);
+extern void tone(uint8_t _pin, unsigned int frequency, unsigned long duration = 0);
+extern void noTone(uint8_t _pin);
 
 #endif //Tone.h
