@@ -21,7 +21,8 @@
 
 #include "Arduino.h"
 
-#define DEBUG_TONE DBG
+#define DEBUG_TONE 
+//DBG
 
 void tone(uint8_t _pin, unsigned int frequency, unsigned long duration) {
 
