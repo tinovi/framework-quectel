@@ -115,13 +115,11 @@ public:
         {
             check_client_id();
             NT.my_socket = LHTTP::handshake(url, ca, client_cert, private_key, handshake_timeout_in_seconds);
-            ::printf("[MQTT] Socket: %d\n", NT.my_socket);
             if (NT.my_socket >= 0)
             {
                 NT.ssl.conf = (mbedtls_ssl_config *)this; //// we not use original mqtt.ssl... for now
                 os_mqtt_Client(&CL, &NT, _cmd_timeout, _tx, _sz, _rx, _sz);
                 res = os_mqtt_Connect(&CL, &CD);
-                ::printf("[MQTT] Connect: %d\n", res);
             }
             if (res < 0)
                 NT.my_socket = LHTTP::disconnect();
