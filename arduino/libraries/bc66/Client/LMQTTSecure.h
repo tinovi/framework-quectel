@@ -114,10 +114,6 @@ public:
         if (!CL.isconnected)
         {
             check_client_id();
-            ::printf("\n");
-            ::printf("[MQTT] CLIENT: %s\n", CD.clientID.cstring);
-            ::printf("[MQTT] USER: %s\n", CD.username.cstring);
-            ::printf("[MQTT] PASS: %.22s\n", CD.password.cstring);
             NT.my_socket = LHTTP::handshake(url, ca, client_cert, private_key, handshake_timeout_in_seconds);
             ::printf("[MQTT] Socket: %d\n", NT.my_socket);
             if (NT.my_socket >= 0)
