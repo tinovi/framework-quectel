@@ -61,9 +61,7 @@ private:
 
   bool transmissionBegun;
 
-  // RX Buffer
   RingBuffer rxBuffer;
-  // TX buffer
   RingBuffer txBuffer;
 
   void (*onRequestCallback)(void){};
