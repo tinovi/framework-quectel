@@ -53,6 +53,33 @@ extern "C"
         char sa_data[14];
     };
 
+    typedef struct
+    {
+        union {
+            u32_t u32_addr[4];
+            u8_t u8_addr[16];
+        } un;
+    } in6_addr;
+
+    struct sockaddr_in6
+    {
+        u8_t sin6_len;
+        sa_family_t sin6_family;
+        in_port_t sin6_port;
+        u32_t sin6_flowinfo;
+        in6_addr sin6_addr;
+        u32_t sin6_scope_id;
+    };
+
+    struct sockaddr_storage
+    {
+        u8_t s2_len;
+        sa_family_t ss_family;
+        char s2_data1[2];
+        u32_t s2_data2[3];
+        u32_t s2_data3[3];
+    };    
+    
     struct hostent
     {
         char *h_name;         /* Official name of the host. */
@@ -215,7 +242,7 @@ extern "C"
 
 #define htons(x) HTONS(x)
 
-#define htonl(s) HTONL(x)
+#define htonl(x) HTONL(x)
 
 #undef fcntl
 
