@@ -129,7 +129,7 @@ void os_api_setup(void)
 {
     const char *name;
     const char *version;
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++) // only two firmwares
     {
         name = api_table[i].name;
         version = api_table[i].version;
