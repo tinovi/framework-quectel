@@ -24,6 +24,8 @@
 #include "variant.h"
 #include "RingBuffer.h"
 
+//BUG-TODO: Ring buffers size must be 8 bytes max
+//          hw I2C not support DMA, hardware fifo is 8 bytes
 #define BUFFER_LENGTH SERIAL_BUFFER_SIZE
 
 class TwoWire : public Stream
