@@ -1,7 +1,7 @@
 # Quectel framework for [PlatformIO](http://platformio.org)
 Тhis is part of [Quectel development platform for PlatformIO](https://github.com/Wiz-IO/platform-quectel)
 
-Version 2.1.01 [31.07.2020]
+Version 2.1.02 [31.07.2020]
 * BC66 CMSIS
 
 Version 2.1.01 [10.03.2020]
