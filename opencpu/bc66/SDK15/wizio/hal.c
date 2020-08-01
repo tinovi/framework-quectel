@@ -17,12 +17,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-#include <mt2625.h>
+#include <hal.h>
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  GPIO
 //
-//      Befiore use init pin, call Ql_GPIO_Init();  
+//      Befiore use init pin, call Ql_GPIO_Init();
 //      pin = MTK_GPIO_ID (look arduino pin table)
 //////////////////////////////////////////////////////////////////////////////////////
 
@@ -65,4 +65,50 @@ int hal_gpio_set_output(uint32_t pin, uint32_t data)
     else
         gpio_base->GPIO_DOUT.CLR[no] = (1 << remainder);
     return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  GPT
+//      GPT4 is userware, connected to 1Mhz
+//      GPT5 is userware, connected to 32K
+//////////////////////////////////////////////////////////////////////////////////////
+void gpt_open_clock_source(void)
+{
+    if (REG_32(0xA21D0300) & 0x800000)
+        REG_32(0xA21D0320) = 0x800000;
+}
+
+void gpt_start_free_run_timer(GPT_REGISTER_T *gpt, uint32_t clock_source, uint32_t divide) // (GPT4, 0, 12) for 1MHz
+{
+    uint32_t clk;
+    gpt = gpt;
+    clk = clock_source | divide;
+    gpt_open_clock_source();
+    gpt->GPT_CLK = clk;
+    gpt->GPT_CON_UNION.GPT_CON = 0x301;
+}
+
+uint32_t gpt_convert_ms_to_32k_count(uint32_t ms)
+{
+    return 6 * ms / 100 + 7 * ms / 10 + 32 * ms + 8 * ms / 1000;
+}
+
+void gpt_delay_time(GPT_REGISTER_T *gpt, const uint32_t count)
+{
+    volatile uint32_t begin;
+    volatile uint32_t tmp;
+    begin = gpt->GPT_COUNT;
+    tmp = count + begin + 1;
+    if (tmp <= begin)
+    {
+        while (gpt->GPT_COUNT >= begin)
+            ;
+        while (gpt->GPT_COUNT < tmp)
+            ;
+    }
+    else
+    {
+        while (gpt->GPT_COUNT >= begin && gpt->GPT_COUNT < tmp)
+            ;
+    }
 }
