@@ -26,6 +26,9 @@ extern "C"
 
 #include <mt2625.h>
 
+#define REG_32(addr)                    (*(volatile uint32_t*)(addr))
+#define REG_16(addr)                    (*(volatile uint16_t*)(addr))
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  GPIO
 //
@@ -35,6 +38,15 @@ extern "C"
 int hal_gpio_set_direction(uint32_t pin, uint32_t direction); // 0 = input, 1 = output
 int hal_gpio_get_input(uint32_t pin, uint32_t *pData);
 int hal_gpio_set_output(uint32_t pin, uint32_t data);
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  GPT
+//      GPT4 is userware, connected to 1Mhz
+//      GPT5 is userware, connected to 32K
+//////////////////////////////////////////////////////////////////////////////////////
+#define GPT_CURRENT_COUNT(G)     G->GPT_COUNT
+uint32_t gpt_convert_ms_to_32k_count(uint32_t ms);
+void gpt_delay_time(GPT_REGISTER_T *gpt /*GPT4, GPT5*/, const uint32_t count);
 
 #ifdef __cplusplus
 }
