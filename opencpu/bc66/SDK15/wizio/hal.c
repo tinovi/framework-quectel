@@ -67,6 +67,29 @@ int hal_gpio_set_output(uint32_t pin, uint32_t data)
     return 0;
 }
 
+int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t driving)
+{
+    uint32_t *reg = (uint32_t *)0xA20C0000; // config_0.GPIO_DRV.RW[0]   0xA20D0000
+    if (pin > 36)
+        return -2;
+    if (pin > 15)
+    {
+        if ((pin - 16) < 14)
+        {
+            pin -= 16;
+            reg++; // config_0.GPIO_DRV.RW[1]
+        }
+        else
+        {
+            pin -= 30;
+            reg += 0x10000; // config_1.GPIO_DRV.RW[0]   0xA20D0000
+        }
+    }
+    *reg &= ~(3 << 2 * pin);
+    *reg |= (driving << 2 * pin);
+    return 0;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  GPT
 //      GPT4 is userware, connected to 1Mhz
