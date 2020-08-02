@@ -90,6 +90,19 @@ int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t drivin
     return 0;
 }
 
+int hal_pinmux_set_function(uint32_t gpio_pin, uint8_t function_index)
+{
+
+    if ((unsigned int)gpio_pin > 36)
+        return -2;
+    if (function_index > 8u)
+        return -1;
+
+    //TODO
+    
+    return 0;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  GPT
 //      GPT4 is userware, connected to 1Mhz
@@ -135,3 +148,18 @@ void gpt_delay_time(GPT_REGISTER_T *gpt, const uint32_t count)
             ;
     }
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  PWM
+//      OpenCPU use PWM_1
+//////////////////////////////////////////////////////////////////////////////////////
+int hal_pwm_set_duty_cycle(PWM_REGISTER_T *pwm, uint32_t duty_cycle)
+{
+    if (0 == pwm)
+        return -1;
+    if (duty_cycle > pwm->PWM_COUNT)
+        duty_cycle = pwm->PWM_COUNT;
+    pwm->PWM_THRESH = duty_cycle;
+    return 0;
+}
+
