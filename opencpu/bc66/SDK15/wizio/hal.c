@@ -15,6 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+//
+// Helper for fast access
+// Usage: #include <hal.h>
+//
 ////////////////////////////////////////////////////////////////////////////
 
 #include <hal.h>
