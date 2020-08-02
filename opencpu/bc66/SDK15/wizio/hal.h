@@ -52,10 +52,10 @@ int hal_gpio_set_output(uint32_t pin, uint32_t data);
 
 typedef enum
 {
-	HAL_GPIO_DRIVING_CURRENT_4MA = 0x0,
-	HAL_GPIO_DRIVING_CURRENT_8MA = 0x1,
-	HAL_GPIO_DRIVING_CURRENT_12MA = 0x2,
-	HAL_GPIO_DRIVING_CURRENT_16MA = 0x3,
+	HAL_GPIO_DRIVING_CURRENT_4MA    = 0x0,
+	HAL_GPIO_DRIVING_CURRENT_8MA    = 0x1,
+	HAL_GPIO_DRIVING_CURRENT_12MA   = 0x2,
+	HAL_GPIO_DRIVING_CURRENT_16MA   = 0x3,
 } hal_gpio_driving_current_t;
 int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t driving);
 
