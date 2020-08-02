@@ -30,6 +30,13 @@ extern "C"
 #define REG_16(addr)                    (*(volatile uint16_t*)(addr))
 
 //////////////////////////////////////////////////////////////////////////////////////
+//  SYSTICK
+// 		Oscilator   = 13M ???
+//		ReloadValue = 0x10000000;
+//////////////////////////////////////////////////////////////////////////////////////
+#define GET_SYS_TICK 					SysTick.VAL	
+	
+//////////////////////////////////////////////////////////////////////////////////////
 //  GPIO
 //
 //      Befiore use init pin, call Ql_GPIO_Init();  
@@ -47,7 +54,9 @@ typedef enum
 	HAL_GPIO_DRIVING_CURRENT_16MA = 0x3,
 } hal_gpio_driving_current_t;
 int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t driving);
-  
+
+int hal_pinmux_set_function(uint32_t gpio_pin, uint8_t function_index); // TODO
+	
 //////////////////////////////////////////////////////////////////////////////////////
 //  GPT
 //      GPT4 is userware, connected to 1Mhz
@@ -57,6 +66,12 @@ int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t drivin
 uint32_t gpt_convert_ms_to_32k_count(uint32_t ms);
 void gpt_delay_time(GPT_REGISTER_T *gpt /*GPT4, GPT5*/, const uint32_t count);
 
+//////////////////////////////////////////////////////////////////////////////////////
+//  PWM
+//      OpenCPU use PWM_1
+//////////////////////////////////////////////////////////////////////////////////////
+int hal_pwm_set_duty_cycle(PWM_REGISTER_T *pwm, uint32_t duty_cycle);	
+	
 #ifdef __cplusplus
 }
 #endif
