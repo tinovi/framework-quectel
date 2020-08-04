@@ -94,16 +94,24 @@ int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t drivin
     return 0;
 }
 
-int hal_pinmux_set_function(uint32_t gpio_pin, uint8_t function_index)
+int hal_pinmux_set_function(uint32_t pin, uint8_t function)
 {
-
-    if ((unsigned int)gpio_pin > 36)
+    if ((unsigned int)pin > 36)
         return -2;
-    if (function_index > 8u)
+    if (function > 8)
         return -1;
-
-    //TODO
-    
+    uint32_t no = pin / 8;
+    uint32_t remainder = pin % 8;
+    gpio_base->GPIO_MODE.CLR[no] = 0xF << (remainder * 4);
+    gpio_base->GPIO_MODE.SET[no] = function << (remainder * 4);
+    char v = pin - 30;
+    if (v <= 4)
+    {
+        if (function == 5)
+            GPIO_CFG1_REGISTER->GPIO_G.CLR = 1 << v;
+        else
+            GPIO_CFG1_REGISTER->GPIO_G.SET = 1 << v;
+    }
     return 0;
 }
 
