@@ -94,6 +94,202 @@ int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t drivin
     return 0;
 }
 
+static uint8_t is_pin_with_pullsel(uint32_t gpio_pin)
+{
+    uint8_t result;
+    if ((unsigned int)(gpio_pin - 24) <= 10 || gpio_pin == 2)
+        result = 1;
+    else
+        result = (unsigned int)(gpio_pin - 5) <= 0;
+    return result;
+}
+
+int hal_gpio_set_pupd_register(uint32_t gpio_pin, uint8_t gpio_pupd, uint8_t gpio_r0, uint8_t gpio_r1)
+{
+    volatile uint32_t v;
+    if ((unsigned int)gpio_pin > 36 || is_pin_with_pullsel(gpio_pin))
+        return -2;
+    if (gpio_pin <= 1) // 1, 2
+    {
+    LABEL:
+        v = 1 << gpio_pin;
+        if (gpio_pupd)
+            GPIO_CFG0_REGISTER->GPIO_PUPD.SET = v;
+        else
+            GPIO_CFG0_REGISTER->GPIO_PUPD.CLR = v;
+        if (gpio_r0)
+            GPIO_CFG0_REGISTER->GPIO_R0.SET = v;
+        else
+            GPIO_CFG0_REGISTER->GPIO_R0.CLR = v;
+        if (gpio_r1)
+            GPIO_CFG0_REGISTER->GPIO_R1.SET = v;
+        else
+            GPIO_CFG0_REGISTER->GPIO_R1.CLR = v;
+        return 0;
+    }
+    if (gpio_pin - 3 <= 1) // 3, 4
+    {
+        gpio_pin -= 1;
+        goto LABEL;
+    }
+    if (gpio_pin - 6 <= 17) // 6 ... 17
+    {
+        gpio_pin -= 2;
+        goto LABEL;
+    }
+    gpio_pin -= 35;
+    if (gpio_pin <= 1) // 35, 36
+    {
+        v = 1 << gpio_pin;
+        if (gpio_pupd)
+            GPIO_CFG1_REGISTER->GPIO_PUPD.SET = v;
+        else
+            GPIO_CFG1_REGISTER->GPIO_PUPD.CLR = v;
+        if (gpio_r0)
+            GPIO_CFG1_REGISTER->GPIO_R0.SET = v;
+        else
+            GPIO_CFG1_REGISTER->GPIO_R0.CLR = v;
+        if (gpio_r1)
+            GPIO_CFG1_REGISTER->GPIO_R1.SET = v;
+        else
+            GPIO_CFG1_REGISTER->GPIO_R1.CLR = v;
+        return 0;
+    }
+    return -1;
+}
+
+int hal_gpio_pull_up(uint32_t gpio_pin)
+{
+    uint32_t v;
+    if (gpio_pin <= 36)
+    {
+        if (!is_pin_with_pullsel(gpio_pin))
+        {
+            return hal_gpio_set_pupd_register(gpio_pin, 0, 1, 0);
+        }
+        if (gpio_pin > 29)
+        {
+            v = gpio_pin - 30;
+            if (v <= 4)
+            {
+                v = 1 << v;
+                GPIO_CFG1_REGISTER->GPIO_PD.CLR = v;
+                GPIO_CFG1_REGISTER->GPIO_PU.SET = v;
+            }
+            return 0;
+        }
+        if (gpio_pin == 2)
+        {
+            v = 1;
+        }
+        else
+        {
+            if (gpio_pin != 5)
+                goto exit;
+            v = 2;
+        }
+        GPIO_CFG0_REGISTER->GPIO_PD.CLR = v;
+        GPIO_CFG0_REGISTER->GPIO_PU.SET = v;
+    exit:
+        if (gpio_pin - 24 <= 5)
+        {
+            v = 1 << (gpio_pin - 22);
+            GPIO_CFG0_REGISTER->GPIO_PD.CLR = v;
+            GPIO_CFG0_REGISTER->GPIO_PU.SET = v;
+        }
+        return 0;
+    }
+    return -2;
+}
+
+int hal_gpio_pull_down(uint32_t gpio_pin)
+{
+    uint32_t v;
+    if (gpio_pin <= 36)
+    {
+        if (!is_pin_with_pullsel(gpio_pin))
+        {
+            return hal_gpio_set_pupd_register(gpio_pin, 1, 1, 0);
+        }
+        if (gpio_pin > 29)
+        {
+            v = gpio_pin - 30;
+            if (v <= 4)
+            {
+                v = 1 << v;
+                GPIO_CFG1_REGISTER->GPIO_PU.CLR = v;
+                GPIO_CFG1_REGISTER->GPIO_PD.SET = v;
+            }
+            return 0;
+        }
+        if (gpio_pin == 2)
+        {
+            v = 1;
+        }
+        else
+        {
+            if (gpio_pin != 5)
+                goto exit;
+            v = 2;
+        }
+        GPIO_CFG0_REGISTER->GPIO_PU.CLR = v;
+        GPIO_CFG0_REGISTER->GPIO_PD.SET = v;
+    exit:
+        if (gpio_pin - 24 <= 5)
+        {
+            v = 1 << (gpio_pin - 22);
+            GPIO_CFG0_REGISTER->GPIO_PU.CLR = v;
+            GPIO_CFG0_REGISTER->GPIO_PD.SET = v;
+        }
+        return 0;
+    }
+    return -2;
+}
+
+int hal_gpio_disable_pull(uint32_t gpio_pin)
+{
+    uint32_t v;
+    if (gpio_pin <= 36)
+    {
+        if (!is_pin_with_pullsel(gpio_pin))
+        {
+            return hal_gpio_set_pupd_register(gpio_pin, 0, 0, 0);
+        }
+        if (gpio_pin > 29)
+        {
+            v = gpio_pin - 30;
+            if (v <= 4)
+            {
+                v = 1 << v;
+                GPIO_CFG1_REGISTER->GPIO_PU.CLR = v;
+                GPIO_CFG1_REGISTER->GPIO_PD.CLR = v;
+            }
+            return 0;
+        }
+        if (gpio_pin == 2)
+        {
+            v = 1;
+        }
+        else
+        {
+            if (gpio_pin != 5)
+                goto exit;
+            v = 2;
+        }
+        GPIO_CFG0_REGISTER->GPIO_PU.CLR = v;
+        GPIO_CFG0_REGISTER->GPIO_PD.CLR = v;
+    exit:
+        if (gpio_pin - 24 <= 5)
+        {
+            v = 1 << (gpio_pin - 22);
+            GPIO_CFG0_REGISTER->GPIO_PU.CLR = v;
+            GPIO_CFG0_REGISTER->GPIO_PD.CLR = v;
+        }
+        return 0;
+    }
+    return -2;
+}
+
 int hal_pinmux_set_function(uint32_t pin, uint8_t function)
 {
     if ((unsigned int)pin > 36)
