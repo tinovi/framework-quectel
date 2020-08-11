@@ -435,7 +435,10 @@ typedef enum
 	HAL_GPIO_DRIVING_CURRENT_16MA   = 0x3,
 } hal_gpio_driving_current_t;
 int hal_gpio_set_driving_current(uint32_t pin, hal_gpio_driving_current_t driving);
-
+int hal_gpio_set_pupd_register(uint32_t pin, uint8_t pupd, uint8_t r0, uint8_t r1);
+int hal_gpio_pull_up(uint32_t gpio_pin);
+int hal_gpio_pull_down(uint32_t gpio_pin);
+int hal_gpio_disable_pull(uint32_t gpio_pin);
 int hal_pinmux_set_function(uint32_t gpio_pin, uint8_t function_index); 
 	
 //////////////////////////////////////////////////////////////////////////////////////
