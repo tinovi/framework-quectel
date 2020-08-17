@@ -371,3 +371,32 @@ int hal_pwm_set_duty_cycle(PWM_REGISTER_T *pwm, uint32_t duty_cycle)
     return 0;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//  UART
+//
+//////////////////////////////////////////////////////////////////////////////////////
+
+static void hal_uart_put_char_block(UART_REGISTER_T *reg, uint8_t byte)
+{
+    while (!(reg->LSR & 0x20))
+        ;
+    reg->THR = byte;
+}
+
+void hal_uart_send_string_polling(UART_REGISTER_T *reg, const char *str)
+{
+    volatile uint32_t v = reg->DMA_CON_UNION.DMA_CON_CELLS.TX_DMA_EN;
+    reg->DMA_CON_UNION.DMA_CON_CELLS.TX_DMA_EN = 0; // disable DMA
+    while (*str)
+        hal_uart_put_char_block(reg, *str++);
+    reg->DMA_CON_UNION.DMA_CON_CELLS.TX_DMA_EN = v; // reastore DMA
+}
+
+void hal_uart_send_buffer_polling(UART_REGISTER_T *reg, const char *data, uint32_t size)
+{
+    volatile uint32_t v = reg->DMA_CON_UNION.DMA_CON_CELLS.TX_DMA_EN;
+    reg->DMA_CON_UNION.DMA_CON_CELLS.TX_DMA_EN = 0;
+    while (size--)
+        hal_uart_put_char_block(reg, *data++);
+    reg->DMA_CON_UNION.DMA_CON_CELLS.TX_DMA_EN = v;
+}
