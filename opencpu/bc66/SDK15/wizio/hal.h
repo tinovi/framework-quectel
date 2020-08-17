@@ -455,6 +455,13 @@ void gpt_delay_time(GPT_REGISTER_T *gpt /*GPT4, GPT5*/, const uint32_t count);
 //      OpenCPU use PWM_1
 //////////////////////////////////////////////////////////////////////////////////////
 int hal_pwm_set_duty_cycle(PWM_REGISTER_T *pwm, uint32_t duty_cycle);	
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  UART
+//
+//////////////////////////////////////////////////////////////////////////////////////	
+void hal_uart_send_string_polling(UART_REGISTER_T *reg, const char *str);
+void hal_uart_send_buffer_polling(UART_REGISTER_T *reg, const char *data, uint32_t size);
 	
 #ifdef __cplusplus
 }
