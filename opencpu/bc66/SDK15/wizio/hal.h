@@ -462,6 +462,7 @@ int hal_pwm_set_duty_cycle(PWM_REGISTER_T *pwm, uint32_t duty_cycle);
 //////////////////////////////////////////////////////////////////////////////////////	
 void hal_uart_send_string_polling(UART_REGISTER_T *reg, const char *str);
 void hal_uart_send_buffer_polling(UART_REGISTER_T *reg, const char *data, uint32_t size);
+void hal_uart_set_baudrate(UART_REGISTER_T *uartx, uint32_t actual_baudrate);
 	
 #ifdef __cplusplus
 }
