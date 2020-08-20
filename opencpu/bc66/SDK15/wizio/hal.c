@@ -400,3 +400,33 @@ void hal_uart_send_buffer_polling(UART_REGISTER_T *reg, const char *data, uint32
         hal_uart_put_char_block(reg, *data++);
     reg->DMA_CON_UNION.DMA_CON_CELLS.TX_DMA_EN = v;
 }
+
+void hal_uart_set_baudrate(UART_REGISTER_T *uartx, uint32_t actual_baudrate)
+{
+    uint32_t integer, remainder, fraction;
+    uint32_t dll_dlm, sample_count, sample_point;
+    uint32_t fraction_mapping[] = {0x00, 0x00, 0x20, 0x90, 0xa8, 0x154, 0x16c, 0x1ba, 0x1f6, 0x1fe};
+    uartx->RATEFIX_UNION.RATEFIX = 0;
+    uartx->FRACDIV = (~UART_FRACDIV_MASK); //0xFFFFFC00
+    integer = 26000000 / (actual_baudrate * 256);
+    remainder = ((26000000 * 10) / (actual_baudrate * 256)) % 10;
+    if ((remainder != 0) || (integer == 0))
+        integer += 1;
+    dll_dlm = integer;
+    sample_count = 26000000 / (actual_baudrate * dll_dlm);
+    while (sample_count > 256)
+    {
+        dll_dlm++;
+        sample_count = 26000000 / (actual_baudrate * dll_dlm);
+    }
+    fraction = ((26000000 * 10) / (actual_baudrate * dll_dlm)) % 10;
+    sample_count -= 1;
+    sample_point = (sample_count - 1) >> 1;
+    uartx->HIGHSPEED = UART_HIGHSPEED_SPEED_MODE3;
+    uartx->DLM_DLL = dll_dlm & 0x0000ffff;
+    uartx->SAMPLE_REG_UNION.SAMPLE_REG = (sample_point << UART_SAMPLE_REG_SAMPLE_POINT_OFFSET) | sample_count;
+    uartx->FRACDIV = fraction_mapping[fraction];
+    if (actual_baudrate >= 3000000)
+        uartx->GUARD = 0x12; /* delay 2 bits per byte. */
+}
+
