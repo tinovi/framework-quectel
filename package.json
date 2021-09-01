@@ -1,7 +1,7 @@
 {
     "name": "framework-quectel",
     "description": "Quectel Frameworks for PlatformIO",
-    "url": "https://github.com/Wiz-IO/framework-quectel",
+    "url": "https://github.com/tinovi/framework-quectel",
     "system": "*",
     "version": "2.1.03"
 }
