@@ -21,6 +21,8 @@
 
 #include <Arduino.h>
 
+#define DEFAULT_AT_TIMEOUT 1000
+
 class LDEV
 {
 
@@ -41,6 +43,36 @@ public:
         else
             Ql_SleepEnable();
     }
+
+    bool enterPin(const char *pin)
+    {
+        if (pin)
+        {
+            char CMD_CPIN[32];
+            Ql_sprintf(CMD_CPIN, "AP+CPIN =\"%s\"\n", pin);
+            return Ql_RIL_SendATCmd(CMD_CPIN, strlen(CMD_CPIN), NULL, NULL, DEFAULT_AT_TIMEOUT) == RIL_AT_SUCCESS;
+        }
+        return false;
+    }
+
+    int getSimStatus()
+    {
+        return os_ril_get_sim(); // 0 = READY,
+    }
+
+    void waitSimReady(const char *pin)
+    {
+        if (pin)
+        {
+            if (false == enterPin(pin))
+            {
+                while (true)
+                    Ql_Sleep(1000); // no exit
+            }
+        }
+        os_ril_wait_sim();
+    }
+
 
 
     int getRssi(){
