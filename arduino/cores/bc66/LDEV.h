@@ -42,6 +42,13 @@ public:
             Ql_SleepEnable();
     }
 
+
+    int getRssi(){
+        s32 ret;
+        RIL_NW_GetCSQ(&ret);
+        return ret;
+    }
+
     void reset() { Ql_Reset(0); }
     void off() { Ql_PowerDown(0); }
     int wakeupReason() { return Ql_GetWakeUpReason(); }

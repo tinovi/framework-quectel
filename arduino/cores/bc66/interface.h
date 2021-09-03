@@ -62,6 +62,7 @@ extern "C"
 #include "ril.h"
 #include "ril_system.h"
 #include "ril_util.h"
+#include "ril_network.h"
 
 #define SYSCALL_TASK_ID 0 /* is main task */
 #define ARDUINO_TASK_ID 3 /* arduino_task_id */
