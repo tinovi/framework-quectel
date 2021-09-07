@@ -160,8 +160,8 @@ public:
     void rtc(uint32_t seconds, sleep_callback_t userCB = NULL)
     {
         Ql_SleepEnable();
-        if (seconds < 10)
-            seconds = 10;
+        if (seconds < 5)
+            seconds = 5;
         m_wakeup_interval = seconds * 1000;
         if (m_wakeup_interval)
         {
