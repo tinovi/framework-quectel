@@ -104,7 +104,7 @@ private:
         if (NULL == CD.clientID.cstring) {
             char imei[16], id[64];
             RIL_GetIMEI(imei);
-            snprintf(id, 64, "QUECTEL-BC66-%s", imei);
+            snprintf(id, 64, "QC-%s", imei);
             CD.clientID.cstring = id;
         }
         //::printf("[MQTT] CLIENT-ID: %s\n", CD.clientID.cstring);

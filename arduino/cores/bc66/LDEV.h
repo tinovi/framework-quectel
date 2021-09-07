@@ -73,6 +73,58 @@ public:
         os_ril_wait_sim();
     }
 
+    static int GET_QCGDEFCONT(char *line, u32 len, void *user)
+    {
+        int res = isAtEnd(line, len);
+        if (RIL_ATRSP_CONTINUE != res)
+            return res;
+        char *h = Ql_RIL_FindString(line, len, (char *)"+QCGDEFCONT:");
+        if (h && user)
+        {
+            char *p1 = NULL;
+            char *p2 = NULL;
+            p1 = Ql_strstr(h, ":");
+            p2 = Ql_strstr(p1 + 1, "\r\n");
+            if (p1 && p2)
+                Ql_memcpy((char *)user, p1 + 2, p2 - p1 - 2);
+        }
+        return RIL_ATRSP_CONTINUE;
+    }
+
+
+    ///return IP, IPV6, IPV4V6, Non-IP
+    bool getDefaultApnType(char *type)
+    {
+        if (type)
+        {
+            char cmd[16];
+            Ql_sprintf(cmd, "AT+QCGDEFCONT?\n");
+            return Ql_RIL_SendATCmd(cmd, strlen(cmd), GET_QCGDEFCONT, type, DEFAULT_AT_TIMEOUT) == RIL_AT_SUCCESS;
+        }
+        return false;
+    }
+
+    bool saveDefaultApn(const char *type, const char *apn, const char *user, const char *pass)
+    { //AT+QCGDEFCONT="IP","apn","user","pass"
+        if (NULL == type || NULL == apn)
+            return false;
+        char cmd[256];
+        Ql_sprintf(cmd, "AT+QCGDEFCONT=\"%s\",\"%s\"", type, apn);
+        if (user)
+        {
+            Ql_strcat(cmd, (char *)",\"");
+            Ql_strcat(cmd, (char *)user);
+            Ql_strcat(cmd, (char *)"\"");
+            if (pass)
+            {
+                Ql_strcat(cmd, (char *)",\"");
+                Ql_strcat(cmd, (char *)pass);
+                Ql_strcat(cmd, (char *)"\"");
+            }
+        }
+        Ql_strcat(cmd, (char *)"\n");
+        return Ql_RIL_SendATCmd(cmd, strlen(cmd), NULL, NULL, DEFAULT_AT_TIMEOUT) == RIL_AT_SUCCESS;
+    }
 
 
     int getRssi(){

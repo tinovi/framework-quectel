@@ -83,3 +83,14 @@ char *itoa(int value, char *result, int base)
 	}
 	return result;
 }
+
+
+int isAtEnd(char *line, u32 len)
+{
+	if (Ql_RIL_FindLine(line, len, (char *)"OK"))
+		return RIL_ATRSP_SUCCESS;
+	if (Ql_RIL_FindLine(line, len, (char *)"ERROR"))
+		return RIL_ATRSP_FAILED;
+	return RIL_ATRSP_CONTINUE;
+}
+

@@ -88,7 +88,7 @@ extern "C"
 
     int isascii(int c);
     int toascii(int c);
-
+    int isAtEnd(char *line, u32 len);
 #ifndef SERIAL_BUFFER_SIZE
 #define SERIAL_BUFFER_SIZE 1024
 #endif
