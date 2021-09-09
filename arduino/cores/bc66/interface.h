@@ -58,6 +58,7 @@ extern "C"
 #include "ql_rtc.h"
 #include "ql_time.h"
 #include "ql_timer.h"
+#include "ql_flash.h"
 
 #include "ril.h"
 #include "ril_system.h"
