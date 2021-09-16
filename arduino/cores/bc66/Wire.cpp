@@ -20,9 +20,9 @@
 #include "Wire.h"
 
 TwoWire Wire(1, 0x01, I2C_FREQUENCY_100K);
-TwoWire Wire1(2, 0x01, I2C_FREQUENCY_100K);
+TwoWire Wire1(0, 0x01, I2C_FREQUENCY_100K);
 
-#define DEBUG_I2C 
+#define DEBUG_I2C ::printf
 //::printf
 
 #define SLC0 PINNAME_GPIO4
@@ -41,7 +41,7 @@ TwoWire::TwoWire(uint8_t port, uint8_t address, u32 brg)
 void TwoWire::init(void)
 {
 	Ql_IIC_Uninit(i2c_port);
-	Ql_IIC_Init(i2c_port, i2c_pinC, i2c_pinD, true);
+	Ql_IIC_Init(i2c_port, i2c_pinC, i2c_pinD, false);
 	Ql_IIC_Config(i2c_port, true, i2c_address, i2c_speed);
 }
 
@@ -100,7 +100,7 @@ uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)
 		return 0;
 	rxBuffer.clear();
 	res = Ql_IIC_Read(i2c_port, i2c_address, (uint8_t *)(rxBuffer._aucBuffer), (uint32_t)quantity);
-	//DEBUG_I2C("[I2C] Ql_IIC_Read: %d %d\n", res, quantity);
+	DEBUG_I2C("[I2C] Ql_IIC_Read: %d %d\n", res, quantity);
 	if (res < 0)
 		quantity = 0;
 	rxBuffer._iHead = quantity;
@@ -127,7 +127,7 @@ uint8_t TwoWire::endTransmission(bool stopBit)
 	if (txBuffer.available() == 0)
 		return 0;
 	int res = Ql_IIC_Write(i2c_port, i2c_address, (uint8_t *)(txBuffer._aucBuffer), (uint32_t)txBuffer.available());
-	//DEBUG_I2C("[I2C] Ql_IIC_Write: %d\n", res);
+	DEBUG_I2C("[I2C] Ql_IIC_Write: %d\n", res);
 	if (res < 0)
 		return 4;
 	return 0;
