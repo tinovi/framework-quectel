@@ -19,8 +19,8 @@
 #include <Arduino.h>
 #include "Wire.h"
 
-TwoWire Wire(1, 0x01, I2C_FREQUENCY_100K);
-TwoWire Wire1(0, 0x01, I2C_FREQUENCY_100K);
+TwoWire Wire(1, 0x01, I2C_FREQUENCY_100K, false);
+TwoWire Wire1(2, 0x02, I2C_FREQUENCY_100K, false);
 
 #define DEBUG_I2C ::printf
 //::printf
@@ -28,21 +28,25 @@ TwoWire Wire1(0, 0x01, I2C_FREQUENCY_100K);
 #define SLC0 PINNAME_GPIO4
 #define SDA0 PINNAME_GPIO5
 
-TwoWire::TwoWire(uint8_t port, uint8_t address, u32 brg)
+TwoWire::TwoWire(uint8_t port, uint8_t address, u32 brg, bool type)
 {
 	i2c_port = port;
 	i2c_address = address << 1; // Arduino is 7bit
 	i2c_speed = brg;
 	i2c_pinC = PINNAME_RI;
 	i2c_pinD = PINNAME_DCD;
+	i2c_type = type;
 	transmissionBegun = false;
 }
 
 void TwoWire::init(void)
 {
-	Ql_IIC_Uninit(i2c_port);
-	Ql_IIC_Init(i2c_port, i2c_pinC, i2c_pinD, false);
-	Ql_IIC_Config(i2c_port, true, i2c_address, i2c_speed);
+	// s32 ret = Ql_IIC_Uninit(i2c_port);
+    // DEBUG_I2C("<--Ql_IIC_Uninit channel %d ret=%d-->\r\n",i2c_port ,ret);
+	s32 ret = Ql_IIC_Init(i2c_port, i2c_pinC, i2c_pinD, i2c_type);
+    DEBUG_I2C("[I2C] Ql_IIC_Init type:%d channel:%d ret:%d \r\n", i2c_type, i2c_port ,ret);
+	ret = Ql_IIC_Config(i2c_port, true, i2c_address, i2c_speed);
+	DEBUG_I2C("[I2C] Ql_IIC_Config channel %d ret:%d \r\n",i2c_port ,ret);
 }
 
 void TwoWire::begin(void)
@@ -87,7 +91,8 @@ void TwoWire::setClock(uint32_t baudrate)
 
 void TwoWire::end()
 {
-	Ql_IIC_Uninit(i2c_port);
+	s32 ret = Ql_IIC_Uninit(i2c_port);
+	DEBUG_I2C("[I2C] Ql_IIC_Uninit channel %d ret:%d\r\n",i2c_port ,ret);
 }
 
 uint8_t TwoWire::requestFrom(uint8_t address, size_t quantity, bool stopBit)

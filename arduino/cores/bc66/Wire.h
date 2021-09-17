@@ -31,7 +31,7 @@
 class TwoWire : public Stream
 {
 public:
-  TwoWire(uint8_t port, uint8_t address, u32 brg = I2C_FREQUENCY_100K);
+  TwoWire(uint8_t port, uint8_t address, u32 brg = I2C_FREQUENCY_100K, bool type = true);
 
   void begin();
   void end();
