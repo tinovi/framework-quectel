@@ -3,8 +3,7 @@
 
 #include <interface.h>
 
-#define DEBUG_PSM 
-//::printf
+#define DEBUG_PSM ::printf
 
 #define MAX_LINE 64
 typedef struct

@@ -62,6 +62,8 @@ void TwoWire::begin(void)
 		i2c_pinC = SLC0;
 		i2c_pinD = SDA0;
 	}
+	Ql_GPIO_Uninit((Enum_PinName)i2c_pinC);
+	Ql_GPIO_Uninit((Enum_PinName)i2c_pinD);
 	init();
 }
 
