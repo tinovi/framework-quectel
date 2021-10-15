@@ -49,12 +49,23 @@ public:
         if (pin)
         {
             char CMD_CPIN[32];
-            Ql_sprintf(CMD_CPIN, "AP+CPIN =\"%s\"\n", pin);
+            Ql_sprintf(CMD_CPIN, "AP+CPIN=\"%s\"\r\n", pin);
             return Ql_RIL_SendATCmd(CMD_CPIN, strlen(CMD_CPIN), NULL, NULL, DEFAULT_AT_TIMEOUT) == RIL_AT_SUCCESS;
         }
         return false;
     }
+    bool cfun(const char *mode)
+    {
+        if (mode)
+        {
+            char CMD_CFUN[12];
+            Ql_sprintf(CMD_CFUN, "AP+CFUN=\"%s\"\r\n", mode);
+            return Ql_RIL_SendATCmd(CMD_CFUN, strlen(CMD_CFUN), NULL, NULL, DEFAULT_AT_TIMEOUT) == RIL_AT_SUCCESS;
+        }
+        return false;
+    }
 
+ 
     int getSimStatus()
     {
         return os_ril_get_sim(); // 0 = READY,

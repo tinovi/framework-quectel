@@ -128,9 +128,11 @@ private:
 
     static void onEintPsm(void *user_data)
     { /*empty*/
+        DEBUG_PSM("\n[PSM] onEintPsm\n");
     }
     static void onRtc(u32 rtcId, void *param)
     { /*empty*/
+        DEBUG_PSM("\n[PSM] onRtc\n");
     }
     static void onBeforeSleepCB(void *THIS, uint32_t mode)
     {
@@ -141,7 +143,7 @@ private:
             {
                 Ql_Rtc_RegisterFast(0x100, onRtc, NULL);
                 Ql_Rtc_Start(0x100, p->m_wakeup_interval, false);
-                DEBUG_PSM("\n[PSM] GO SLEEP: %u\n", seconds());
+                DEBUG_PSM("\n[PSM] onBeforeSleepCB: %u  period:%lu\n", seconds(),p->m_wakeup_interval);
             }
         }
     }
